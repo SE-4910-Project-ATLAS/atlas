@@ -1,0 +1,21 @@
+# Secrets – never commit
+.env
+.env.*
+!.env.example
+
+# Large data – kept outside Git (see data-infra/README.md)
+*.mp4
+*.avi
+*.mkv
+*.pt
+*.onnx
+*.engine
+datasets/
+recordings/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
