@@ -1,0 +1,10 @@
+# Each folder has an owner who is asked to review Pull Requests that change it.
+# Replace the placeholders with GitHub usernames, e.g. @username.
+# Owners are agreed in a technical meeting.
+
+/vision-service/  @OWNER_VISION
+/backend/         @OWNER_BACKEND
+/mobile-app/      @OWNER_MOBILE
+/dashboard/       @OWNER_DASHBOARD
+/data-infra/      @OWNER_DATA_INFRA
+/contracts/       @OWNER_BACKEND @OWNER_VISION
