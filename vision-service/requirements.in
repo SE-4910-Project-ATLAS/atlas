@@ -1,0 +1,5 @@
+# Direct dependencies. requirements.txt is the lock file generated from this list
+# (see the "Updating dependencies" section of the root README).
+# Detection libraries (OpenCV, Ultralytics) are added when the models are chosen (S4PT-47).
+fastapi==0.162.5
+uvicorn==0.54.0

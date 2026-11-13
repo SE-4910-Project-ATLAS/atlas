@@ -1,0 +1,14 @@
+# Gives the vision service access to the NVIDIA GPU (SR-01, SR-02).
+# Needs the NVIDIA driver and the NVIDIA Container Toolkit on the host:
+#   docker compose -f compose.yaml -f compose.gpu.yaml up --build
+# Without this file the vision service runs on the CPU, which is enough for development.
+
+services:
+  vision-service:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

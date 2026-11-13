@@ -1,0 +1,4 @@
+# Direct dependencies. requirements.txt is the lock file generated from this list
+# (see the "Updating dependencies" section of the root README).
+fastapi==0.162.5
+uvicorn==0.54.0
