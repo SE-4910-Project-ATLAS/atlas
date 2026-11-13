@@ -10,4 +10,12 @@ Datasets, model weights and recorded footage are **not** committed to Git. Store
 
 ## Setup
 
-_To be added when development of this sub-system starts._
+The Docker Compose files are in the repository root, so that one command starts the
+whole system (D7, NFR-25):
+
+- `compose.yaml` – database (PostgreSQL/PostGIS), Redis, backend, vision service and
+  dashboard, with health checks and start-up order.
+- `compose.gpu.yaml` – optional override that gives the vision service access to an
+  NVIDIA GPU.
+
+See the root README for the commands.

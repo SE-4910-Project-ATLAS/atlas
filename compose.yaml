@@ -1,0 +1,83 @@
+# Starts the whole ATLAS system with one command (D7, NFR-25):
+#   docker compose up --build
+# The mobile app is not part of Compose; it runs on a phone or an emulator.
+# Values come from .env (copy .env.example); the defaults below work without it.
+# For the vision service on an NVIDIA GPU, add compose.gpu.yaml (see README).
+
+services:
+  db:
+    image: postgis/postgis:18-3.7-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:8.10.3-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@db:5432/${POSTGRES_DB:-atlas}
+      REDIS_URL: redis://redis:6379/0
+      ROUTING_API_KEY: ${ROUTING_API_KEY:-}
+      FCM_CREDENTIALS_FILE: ${FCM_CREDENTIALS_FILE:-}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  vision-service:
+    build: ./vision-service
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "${VISION_PORT:-8001}:8001"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "${DASHBOARD_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  db-data:
