@@ -1,0 +1,13 @@
+# Keep LF line endings on every platform, so files copied into Linux containers
+# (scripts, configs) work the same when the repository is cloned on Windows.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jar binary
