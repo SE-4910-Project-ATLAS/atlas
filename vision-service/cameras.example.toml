@@ -1,0 +1,18 @@
+# Copy this file to a name outside Git (for example `cameras.local.toml`), fill in
+# the real stream addresses, and point ATLAS_CAMERAS_FILE at it.
+# Never commit real stream addresses: the repository is public.
+
+[[camera]]
+id = "izum-example"
+type = "mjpeg"
+url = "http://example.invalid/stream.mjpg"
+
+[[camera]]
+id = "ibb-example"
+type = "hls"
+url = "https://example.invalid/stream/playlist.m3u8"
+
+[[camera]]
+id = "recorded-example"
+type = "file"
+url = "C:/path/to/recording.mp4"
