@@ -25,3 +25,26 @@ uvicorn app.main:app --reload --port 8001
 
 The detection libraries are added to `requirements.in` when the models are chosen
 (S4PT-47); `requirements.txt` is the lock file.
+
+
+## Tests
+
+```bash
+pip install pytest
+python -m pytest -q
+```
+
+## Measuring the real frame rate of a camera (S4PT-50)
+
+1. Copy `cameras.example.toml` to `cameras.local.toml` and put the camera addresses in it.
+   `*.local.toml` is ignored by Git. Never commit camera addresses.
+2. Run the measurement (10 minutes by default):
+
+```bash
+python -m app.ingest.measure --config cameras.local.toml --camera <id> --duration 600 --csv results.csv
+```
+
+The result lists the frame rate, frame intervals, stalls and status changes (online or
+offline). Only the delay of the first frame is reported: a third-party stream carries no
+reference clock, so the end-to-end delay cannot be measured. HLS players deliver frames
+in bursts, so use a long measurement and the per-minute rates for HLS streams.
