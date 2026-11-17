@@ -15,6 +15,8 @@ from app.ingest.models import CameraConfig, CameraStatus, Frame, SourceType
 logger = logging.getLogger(__name__)
 
 DEFAULT_FILE_FPS = 25.0  # used when a video file does not report its frame rate
+DEFAULT_OPEN_TIMEOUT_MS = 10_000  # give up opening a stream after this long
+DEFAULT_READ_TIMEOUT_MS = 10_000  # treat a stream without data for this long as stopped
 
 StatusCallback = Callable[[str, CameraStatus], None]
 
@@ -38,6 +40,8 @@ class CameraReader:
         retry_initial: float = 1.0,
         retry_max: float = 30.0,
         open_capture: Callable[[str], Any] | None = None,
+        open_timeout_ms: int = DEFAULT_OPEN_TIMEOUT_MS,
+        read_timeout_ms: int = DEFAULT_READ_TIMEOUT_MS,
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
@@ -45,11 +49,24 @@ class CameraReader:
         self._on_status = on_status
         self._retry_initial = retry_initial
         self._retry_max = retry_max
-        self._open_capture = open_capture or cv2.VideoCapture
+        self._open_capture = open_capture or self._default_open_capture(open_timeout_ms, read_timeout_ms)
         self._clock = clock
         self._sleep = sleep
         self._stop = threading.Event()
         self._status: CameraStatus | None = None
+
+    @staticmethod
+    def _default_open_capture(open_timeout_ms: int, read_timeout_ms: int) -> Callable[[str], Any]:
+        """OpenCV waits 30 s by default for a stream that does not answer; use shorter limits."""
+        params = [
+            cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, open_timeout_ms,
+            cv2.CAP_PROP_READ_TIMEOUT_MSEC, read_timeout_ms,
+        ]  # fmt: skip
+
+        def open_capture(url: str) -> Any:
+            return cv2.VideoCapture(url, cv2.CAP_ANY, params)
+
+        return open_capture
 
     @property
     def status(self) -> CameraStatus | None:

@@ -201,3 +201,22 @@ def test_reads_a_real_video_file(tmp_path):
     assert len(frames) == 6
     assert frames[0].image.shape == (48, 64, 3)
     assert reader.status is CameraStatus.ONLINE
+
+
+def test_default_capture_uses_the_timeouts(monkeypatch):
+    calls = []
+
+    def fake_video_capture(url, api, params):
+        calls.append((url, api, params))
+        return object()
+
+    monkeypatch.setattr(cv2, "VideoCapture", fake_video_capture)
+    reader = CameraReader(
+        CameraConfig("cam-1", SourceType.HLS, "http://example.invalid/s"),
+        open_timeout_ms=1234,
+        read_timeout_ms=5678,
+    )
+    reader._open_capture("http://example.invalid/s")
+    (_, _, params), = calls
+    assert params == [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 1234,
+                      cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5678]

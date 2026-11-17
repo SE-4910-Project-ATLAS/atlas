@@ -172,6 +172,22 @@ def sample(camera_id="cam-1"):
                        5.0, 4.9, 5.1, 200.0, 210.0, 900.0, None, 1, 0)
 
 
+def test_status_changes_are_recorded_in_the_timeline():
+    clock = ScriptedClock()
+    captures = iter([TimedCapture(clock, [], opened=False), TimedCapture(clock, [0.5, 1.0])])
+    timeline = []
+    measure(
+        stream_config(),
+        duration=1.0,
+        warmup=0.0,
+        clock=clock,
+        timeline=timeline,
+        open_capture=lambda _url: next(captures),
+        retry_initial=0.0,
+    )
+    assert [state for _, state in timeline] == ["offline", "online"]
+
+
 def test_csv_rows_are_appended_with_one_header(tmp_path):
     path = tmp_path / "out.csv"
     append_csv(path, sample("a"))

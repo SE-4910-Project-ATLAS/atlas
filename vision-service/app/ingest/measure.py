@@ -79,18 +79,24 @@ def measure(
     duration: float = DEFAULT_DURATION_S,
     warmup: float = DEFAULT_WARMUP_S,
     clock: Callable[[], float] = time.monotonic,
+    timeline: list[tuple[float, str]] | None = None,
     **reader_options: Any,
 ) -> Measurement:
     """Read the source for `duration` seconds and summarise what arrived.
 
     `reader_options` are passed to CameraReader (for example `open_capture`).
+    When a list is given as `timeline`, every status change is added to it as
+    (seconds since the start, "online" or "offline").
     """
     offline_events = 0
+    started = clock()
 
     def on_status(_camera_id: str, status: CameraStatus) -> None:
         nonlocal offline_events
         if status is CameraStatus.OFFLINE:
             offline_events += 1
+        if timeline is not None:
+            timeline.append((round(clock() - started, 1), status.value))
 
     reader = CameraReader(config, on_status=on_status, clock=clock, **reader_options)
 
@@ -100,7 +106,6 @@ def measure(
     timer.daemon = True
     timer.start()
 
-    started = clock()
     arrivals: list[float] = []  # seconds since the start
     shape = (0, 0)
     try:
@@ -231,13 +236,16 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     print(f"Measuring camera {args.camera} for {args.duration:g} s ...", file=sys.stderr)
+    timeline: list[tuple[float, str]] = []
     try:
-        result = measure(by_id[args.camera], duration=args.duration, warmup=args.warmup)
+        result = measure(by_id[args.camera], duration=args.duration, warmup=args.warmup, timeline=timeline)
     except KeyboardInterrupt:
         print("Stopped.", file=sys.stderr)
         return 130
 
     print(format_result(result))
+    if timeline:
+        print("status changes: " + ", ".join(f"{state} at {seconds:g} s" for seconds, state in timeline[:20]))
     if args.csv:
         append_csv(args.csv, result)
         print(f"Result added to {args.csv}", file=sys.stderr)
