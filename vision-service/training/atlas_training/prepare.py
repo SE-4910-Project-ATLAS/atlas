@@ -131,6 +131,7 @@ class SourceReport:
     clips: int | None = None                                  # see assign_clips
     near_copies_dropped: dict = field(default_factory=dict)   # see drop_test_near_copies
     excluded: int = 0                                         # see DatasetSource.exclude_images
+    background_dropped: int = 0                               # see cap_background
 
 
 def read_names(source_dir: Path) -> list[str]:
@@ -398,6 +399,20 @@ def drop_test_near_copies(
         reports[source_id].near_copies_dropped = dropped
 
 
+def cap_background(samples: list[Sample], limit: int, seed: int) -> tuple[list[Sample], int]:
+    """Keep every sample with a target box and at most `limit` without one (chosen with the seed).
+
+    Large sets of images without an ambulance take most of the training time but teach
+    little more than a sample of them; the order of the input is kept.
+    """
+    background = [i for i, s in enumerate(samples) if not s.labels]
+    if len(background) <= limit:
+        return list(samples), 0
+    keep = set(random.Random(seed).sample(background, limit))
+    kept = [s for i, s in enumerate(samples) if s.labels or i in keep]
+    return kept, len(samples) - len(kept)
+
+
 def write_image(s: Sample, dst: Path) -> None:
     if not s.rotate:
         link_or_copy(s.image, dst)
@@ -416,19 +431,24 @@ def link_or_copy(src: Path, dst: Path) -> None:
 
 
 def write_dataset(exp: cfg.Experiment, splits_by_source: dict[str, dict[str, list[Sample]]]) -> None:
+    repeats = {s.id: s.train_repeat for s in exp.datasets}
     out = exp.dataset_dir
     if out.exists():
         shutil.rmtree(out)
     for split in ("train", "val", "test"):
         (out / split / "images").mkdir(parents=True)
         (out / split / "labels").mkdir(parents=True)
-    for splits in splits_by_source.values():
+    for source_id, splits in splits_by_source.items():
         for split, samples in splits.items():
+            # Oversampling: train images of a small source are written several times, so
+            # that each epoch shows them as often (hardlinks, no extra disk space).
+            copies = repeats.get(source_id, 1) if split == "train" else 1
             for s in samples:
-                name = f"{s.source}__{s.image.stem}"
-                write_image(s, out / split / "images" / f"{name}{s.image.suffix.lower()}")
                 lines = [f"{c} {cx:.6f} {cy:.6f} {w:.6f} {h:.6f}" for c, cx, cy, w, h in s.labels]
-                (out / split / "labels" / f"{name}.txt").write_text("\n".join(lines) + ("\n" if lines else ""))
+                for r in range(copies):
+                    name = f"{s.source}__{s.image.stem}" + (f"__r{r}" if r else "")
+                    write_image(s, out / split / "images" / f"{name}{s.image.suffix.lower()}")
+                    (out / split / "labels" / f"{name}.txt").write_text("\n".join(lines) + ("\n" if lines else ""))
     data = {
         "path": str(out),
         "train": "train/images",
@@ -460,6 +480,11 @@ def prepare(config_path: str) -> dict:
     if exp.test_near_copy_similarity:
         drop_test_near_copies(splits_by_source, exp.test_near_copy_similarity, reports)
     for source in exp.datasets:
+        if source.max_train_background is not None:
+            splits = splits_by_source[source.id]
+            splits["train"], reports[source.id].background_dropped = cap_background(
+                splits["train"], source.max_train_background, exp.seed)
+    for source in exp.datasets:
         report = reports[source.id]
         for split, items in splits_by_source[source.id].items():
             report.images[split] = len(items)
@@ -487,6 +512,8 @@ def prepare(config_path: str) -> dict:
                 "upright_test_copies": reports[s.id].upright,
                 "test_near_copies_dropped": reports[s.id].near_copies_dropped,
                 "excluded_images": reports[s.id].excluded,
+                "train_background_dropped": reports[s.id].background_dropped,
+                "train_repeat": s.train_repeat,
             }
             for s in exp.datasets
         },

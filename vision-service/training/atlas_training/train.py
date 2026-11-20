@@ -11,8 +11,22 @@ from __future__ import annotations
 
 import argparse
 import shutil
+from pathlib import Path
 
 from . import config as cfg
+
+
+def base_weights(base: str) -> Path:
+    """A bare file name is an Ultralytics model, downloaded to weights/ on first use; a
+    path (relative to the training folder) is an earlier run, e.g. to continue from it."""
+    path = Path(base)
+    if path.parent == Path("."):
+        cfg.WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
+        return cfg.WEIGHTS_DIR / base
+    path = path if path.is_absolute() else cfg.TRAINING_DIR / path
+    if not path.exists():
+        raise SystemExit(f"base_model {base} not found")
+    return path
 
 
 def main() -> None:
@@ -32,8 +46,7 @@ def main() -> None:
     if args.epochs:
         settings["epochs"] = args.epochs
 
-    cfg.WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
-    model = YOLO(str(cfg.WEIGHTS_DIR / base))   # downloaded there on first use
+    model = YOLO(str(base_weights(base)))
     result = model.train(
         data=str(exp.data_yaml),
         seed=exp.seed,

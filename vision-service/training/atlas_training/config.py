@@ -50,6 +50,8 @@ class DatasetSource:
     orientation_overrides: dict[str, int] = field(default_factory=dict)
     augmented_copies: bool = False
     exclude_images: dict[str, str] = field(default_factory=dict)  # file stem: reason
+    train_repeat: int = 1                     # each train image is written this many times
+    max_train_background: int | None = None   # cap on train images without a target box
 
     @property
     def download_dir(self) -> Path:
@@ -110,6 +112,12 @@ def load(path: str | Path) -> Experiment:
         if clip_similarity is not None and not 0 < float(clip_similarity) < 1:
             raise ValueError(f"{d['id']}: clip_similarity must be between 0 and 1")
         exclude = {str(k): str(v) for k, v in (d.get("exclude_images") or {}).items()}
+        train_repeat = int(d.get("train_repeat", 1))
+        if not 1 <= train_repeat <= 10:
+            raise ValueError(f"{d['id']}: train_repeat must be between 1 and 10")
+        max_background = d.get("max_train_background")
+        if max_background is not None and int(max_background) < 0:
+            raise ValueError(f"{d['id']}: max_train_background must not be negative")
         overrides = {str(k): int(v) % 4 for k, v in (d.get("orientation_overrides") or {}).items()}
         sources.append(DatasetSource(
             id=d["id"], workspace=d["workspace"], project=d["project"],
@@ -120,6 +128,8 @@ def load(path: str | Path) -> Experiment:
             orientation_overrides=overrides,
             augmented_copies=bool(d.get("augmented_copies", False)),
             exclude_images=exclude,
+            train_repeat=train_repeat,
+            max_train_background=None if max_background is None else int(max_background),
         ))
 
     split = raw["split"]

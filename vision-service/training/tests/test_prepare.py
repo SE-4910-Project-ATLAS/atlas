@@ -281,3 +281,32 @@ def test_test_images_that_copy_a_training_image_are_dropped(tmp_path):
     assert [s.image.stem for s in splits["a"]["test"]] == ["new_scene"]
     assert reports["a"].near_copies_dropped == {"images": 2, "with_target": 1}
     assert splits["a"]["train"] == train
+
+
+def test_cap_background_keeps_every_labelled_image():
+    labelled = copies(5, 1, "train")
+    background = samples(20, "bg")
+    kept, dropped = prepare.cap_background(labelled + background, 6, seed=42)
+    assert dropped == 14
+    assert [s for s in kept if s.labels] == labelled
+    assert sum(1 for s in kept if not s.labels) == 6
+    assert prepare.cap_background(labelled + background, 6, seed=42)[0] == kept  # same seed, same choice
+
+
+def test_cap_background_below_the_limit_changes_nothing():
+    items = copies(2, 1, "train") + samples(3, "bg")
+    assert prepare.cap_background(items, 10, seed=1) == (items, 0)
+
+
+def test_train_images_are_repeated_only_in_train(tmp_path, monkeypatch):
+    monkeypatch.setattr(cfg, "DATA_DIR", tmp_path / "data")
+    image = tmp_path / "a.jpg"
+    image.write_bytes(b"x")
+    source = cfg.DatasetSource("own", "w", "p", 1, "l", "u", {"ambulance": "ambulance"}, train_repeat=3)
+    exp = cfg.load(Path(__file__).parents[1] / "configs" / "ambulance_v1.yaml")
+    exp = type(exp)(**{**exp.__dict__, "datasets": [source]})
+    s = prepare.Sample("own", image, [(0, .5, .5, .1, .1)], "train")
+    prepare.write_dataset(exp, {"own": {"train": [s], "val": [], "test": [s]}})
+    assert len(list((exp.dataset_dir / "train" / "images").iterdir())) == 3
+    assert len(list((exp.dataset_dir / "train" / "labels").iterdir())) == 3
+    assert len(list((exp.dataset_dir / "test" / "images").iterdir())) == 1
