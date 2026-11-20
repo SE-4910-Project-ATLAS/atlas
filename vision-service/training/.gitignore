@@ -1,0 +1,6 @@
+# Large or local files of the training tools – never committed
+.venv/
+datasets/
+weights/
+runs/
+*.part

@@ -1,0 +1,18 @@
+# Training and evaluation tools for the vision models (S4PT-52).
+# Kept apart from ../requirements.in: the running service does not need them, and
+# PyTorch with CUDA is several gigabytes.
+#
+# requirements.txt is the lock file. It is generated for Python 3.14 on Windows with an
+# NVIDIA GPU (PyTorch CUDA 13.2 wheels); see "Updating the lock file" in README.md.
+# Python 3.14, not the service's 3.15: on Windows, PyYAML and pillow-avif-plugin (needed
+# by Ultralytics) have no 3.15 wheels yet and would need a C++ compiler.
+--index-url https://download.pytorch.org/whl/cu132
+--extra-index-url https://pypi.org/simple
+
+torch==2.15.0+cu132
+torchvision==0.29.2+cu132
+ultralytics==8.4.215
+roboflow==1.7.3
+pyyaml==6.0.3
+numpy==2.5.5
+pytest==9.2.0
