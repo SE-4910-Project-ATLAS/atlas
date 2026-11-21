@@ -26,8 +26,9 @@ LABEL_CONFIG = """<View>
 INSTRUCTIONS = (
     "Draw a box around every ambulance, police car and fire truck, also small, far, partly "
     "hidden or night-time ones. Label vehicles only: the word AMBULANS in a news caption or "
-    "on a sign is not an ambulance. The box covers the whole vehicle, not only the lights "
-    "or the lettering. "
+    "on a sign is not an ambulance. The box covers all of the vehicle that can be seen, not "
+    "only the lights or the lettering; label a partly hidden or cut-off ambulance when the "
+    "visible part shows it is one. "
     "Fix or delete the suggested boxes. Submit frames without an ambulance empty. "
     "Skip frames that are not camera footage (news studio, graphics, text)."
 )

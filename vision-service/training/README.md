@@ -90,13 +90,38 @@ python -m atlas_training.frames path/to/clips/*.mp4 --out path/to/labeling/tr_v1
 # 2. Label Studio runs on this computer (pip install label-studio in its own environment;
 #    LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true, LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=path/to/labeling)
 python -m atlas_training.labelstudio import path/to/labeling/tr_v1 --project "ATLAS ambulance - tr_v1"   --token-file path/to/.ls_token
-# 3. Label: whole vehicles only (ambulance, police, fire_truck), not the word AMBULANS in a caption.
+# 3. Label vehicles only (ambulance, police, fire_truck), not the word AMBULANS in a caption;
+#    the box covers the visible part, also of partly hidden or cut-off ambulances.
 # 4. Export the submitted frames; whole videos go to test with --test-clip
 python -m atlas_training.labelstudio export datasets/raw/own_cctv-v1 --projects 1 2   --root path/to/labeling --token-file path/to/.ls_token --test-clip <video id>
 ```
 
 Frames of one video always stay in one split (train, val or test), so the test videos
 are never seen in training. The access token stays in a file outside the repository.
+
+### Hard examples from the model's flicker
+
+Instead of frames every 0.5 s, `atlas_training.mine` picks the frames where the model is
+probably wrong, from how its detections change between neighbouring frames (Jin et al.,
+ECCV 2018): an ambulance detected before and after a frame but not in it (a likely miss,
+with the box interpolated) and a confident detection with nothing near it in the frames
+around it (a likely false alarm). They are imported and checked like any other frames.
+
+```bash
+python -m atlas_training.mine path/to/clips/*.mp4 --out path/to/labeling/mined_v1   --weights runs/train/ambulance_v4/weights/best.pt
+```
+
+### Per passage: events found, delay and false alarms
+
+The system raises an alarm per ambulance passage, not per frame, so
+`atlas_training.events` smooths the per-frame detections (an alarm needs several
+detections in the last second, after Fan et al., 2022) and reports how many labelled
+ambulance passages got an alarm, how many seconds after they started, and alarm time with
+no ambulance (per hour on footage without ambulances, for FR-11).
+
+```bash
+python -m atlas_training.events path/to/test/clips/*.mp4 --labels datasets/raw/own_cctv-v1/test/labels   --weights runs/train/ambulance_v4/weights/best.pt --out runs/eval/events_v4.json
+```
 
 ## How results stay comparable and reproducible
 
