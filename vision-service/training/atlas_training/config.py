@@ -51,6 +51,7 @@ class DatasetSource:
     augmented_copies: bool = False
     exclude_images: dict[str, str] = field(default_factory=dict)  # file stem: reason
     train_repeat: int = 1                     # each train image is written this many times
+    repeat_background: bool = True            # False: train_repeat only for images with a target box
     max_train_background: int | None = None   # cap on train images without a target box
 
     @property
@@ -129,6 +130,7 @@ def load(path: str | Path) -> Experiment:
             augmented_copies=bool(d.get("augmented_copies", False)),
             exclude_images=exclude,
             train_repeat=train_repeat,
+            repeat_background=bool(d.get("repeat_background", True)),
             max_train_background=None if max_background is None else int(max_background),
         ))
 

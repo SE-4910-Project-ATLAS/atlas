@@ -310,3 +310,18 @@ def test_train_images_are_repeated_only_in_train(tmp_path, monkeypatch):
     assert len(list((exp.dataset_dir / "train" / "images").iterdir())) == 3
     assert len(list((exp.dataset_dir / "train" / "labels").iterdir())) == 3
     assert len(list((exp.dataset_dir / "test" / "images").iterdir())) == 1
+
+
+def test_repeat_background_off_writes_images_without_a_box_once(tmp_path, monkeypatch):
+    monkeypatch.setattr(cfg, "DATA_DIR", tmp_path / "data")
+    pos, neg = tmp_path / "pos.jpg", tmp_path / "neg.jpg"
+    pos.write_bytes(b"x")
+    neg.write_bytes(b"y")
+    source = cfg.DatasetSource("own", "w", "p", 1, "l", "u", {"ambulance": "ambulance"},
+                               train_repeat=3, repeat_background=False)
+    exp = cfg.load(Path(__file__).parents[1] / "configs" / "ambulance_v1.yaml")
+    exp = type(exp)(**{**exp.__dict__, "datasets": [source]})
+    samples = [prepare.Sample("own", pos, [(0, .5, .5, .1, .1)], "train"), prepare.Sample("own", neg, [], "train")]
+    prepare.write_dataset(exp, {"own": {"train": samples, "val": [], "test": []}})
+    names = sorted(p.stem for p in (exp.dataset_dir / "train" / "images").iterdir())
+    assert names == ["own__neg", "own__pos", "own__pos__r1", "own__pos__r2"]

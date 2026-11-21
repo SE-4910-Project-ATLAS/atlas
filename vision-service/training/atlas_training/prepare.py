@@ -432,6 +432,7 @@ def link_or_copy(src: Path, dst: Path) -> None:
 
 def write_dataset(exp: cfg.Experiment, splits_by_source: dict[str, dict[str, list[Sample]]]) -> None:
     repeats = {s.id: s.train_repeat for s in exp.datasets}
+    repeat_background = {s.id: s.repeat_background for s in exp.datasets}
     out = exp.dataset_dir
     if out.exists():
         shutil.rmtree(out)
@@ -441,11 +442,13 @@ def write_dataset(exp: cfg.Experiment, splits_by_source: dict[str, dict[str, lis
     for source_id, splits in splits_by_source.items():
         for split, samples in splits.items():
             # Oversampling: train images of a small source are written several times, so
-            # that each epoch shows them as often (hardlinks, no extra disk space).
+            # that each epoch shows them as often (hardlinks, no extra disk space). With
+            # repeat_background off, images without a target box are written once.
             copies = repeats.get(source_id, 1) if split == "train" else 1
             for s in samples:
                 lines = [f"{c} {cx:.6f} {cy:.6f} {w:.6f} {h:.6f}" for c, cx, cy, w, h in s.labels]
-                for r in range(copies):
+                n = copies if s.labels or repeat_background.get(source_id, True) else 1
+                for r in range(n):
                     name = f"{s.source}__{s.image.stem}" + (f"__r{r}" if r else "")
                     write_image(s, out / split / "images" / f"{name}{s.image.suffix.lower()}")
                     (out / split / "labels" / f"{name}.txt").write_text("\n".join(lines) + ("\n" if lines else ""))
