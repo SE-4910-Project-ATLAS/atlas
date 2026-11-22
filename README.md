@@ -42,7 +42,7 @@ in a local `.env` file that is never committed (copy `.env.example`).
    Jira.
 4. Open a Pull Request to `main` using the PR template. At least one approving review is
    required; nobody pushes directly to `main`.
-5. After the review the author merges the PR and deletes the branch.
+5. After the review the author merges the PR; the branch is kept after the merge.
 
 ## Getting started
 
