@@ -61,7 +61,7 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
     # --candidate-fps for --candidate-hold seconds.
     fast = max(1, round(fps / args.candidate_fps)) if args.candidate_fps else stride
     fast_until = -1.0
-    times, frames, raw_frames = [], [], []
+    times, frames, raw_frames, geo_frames = [], [], [], []
     index, last_read = 0, -10**9
     while True:
         ok = capture.grab()
@@ -77,12 +77,16 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
                                imgsz=args.imgsz, classes=VEHICLE_CLASSES, agnostic_nms=True, verbose=False)[0]
             probs: dict[int, float] = {}
             raw: dict[int, float] = {}
+            geo: dict[int, list[float]] = {}
             if r.boxes is not None and r.boxes.id is not None:
                 boxes = r.boxes.xyxy.cpu().numpy()
                 ids = r.boxes.id.int().cpu().tolist()
                 crops = [cv2.resize(square_crop(image, b, args.pad), (args.size, args.size)) for b in boxes]
                 ps = [c.probs.data[amb].item() for c in classifier.predict(crops, imgsz=args.size, verbose=False)]
                 raw = dict(zip(ids, ps, strict=True))
+                # Box centre and width (pixels), for motion rules applied after the run.
+                geo = {i: [round(float((b[0] + b[2]) / 2), 1), round(float((b[1] + b[3]) / 2), 1),
+                           round(float(b[2] - b[0]), 1)] for i, b in zip(ids, boxes, strict=True)}
                 if args.tta:
                     # Test-time augmentation: average with the mirrored crop. The unflipped
                     # scores are kept too, so one run gives both results.
@@ -105,9 +109,10 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
             times.append(index / fps)
             frames.append(probs)
             raw_frames.append(raw)
+            geo_frames.append(geo)
         index += 1
     capture.release()
-    return times, frames, raw_frames
+    return times, frames, raw_frames, geo_frames
 
 
 def alarm_sprt(frames: list[dict], upper: float, clip: float = 2.0, prior: float = 0.5) -> list[bool]:
@@ -151,6 +156,84 @@ def alarm_from_tracks_time(times: list[float], frames: list[dict], min_seconds: 
             n = count[track_id]
             if n >= min_frames and t - first[track_id] >= min_seconds and total[track_id] / n >= threshold:
                 on = True
+        alarm.append(on)
+    return alarm
+
+
+def moving_tracks(boxes: list[dict], min_move: float) -> set[int]:
+    """Tracks whose box centre moved at least `min_move` box widths from where the track
+    started, at any time. A parked vehicle under shop lighting can be lost and found again
+    by the tracker many times; without this rule each new track is a new alarm, and a
+    parked vehicle is not one drivers must give way to (FR-08 alerts use speed and
+    direction)."""
+    start: dict[int, tuple[float, float]] = {}
+    moved: set[int] = set()
+    for frame in boxes:
+        for key, (cx, cy, w) in frame.items():
+            track_id = int(key)
+            x0, y0 = start.setdefault(track_id, (cx, cy))
+            if ((cx - x0) ** 2 + (cy - y0) ** 2) ** 0.5 >= min_move * max(w, 1.0):
+                moved.add(track_id)
+    return moved
+
+
+def only_moving(frames: list[dict], boxes: list[dict], min_move: float) -> list[dict]:
+    """Per-frame scores restricted to tracks that have moved by that frame."""
+    start: dict[int, tuple[float, float]] = {}
+    moved: set[int] = set()
+    out = []
+    for probs, frame in zip(frames, boxes, strict=True):
+        for key, (cx, cy, w) in frame.items():
+            track_id = int(key)
+            x0, y0 = start.setdefault(track_id, (cx, cy))
+            if ((cx - x0) ** 2 + (cy - y0) ** 2) ** 0.5 >= min_move * max(w, 1.0):
+                moved.add(track_id)
+        out.append({t: p for t, p in probs.items() if t in moved})
+    return out
+
+
+def alarm_once_per_place(times: list[float], frames: list[dict], boxes: list[dict], min_frames: int,
+                         threshold: float, radius: float = 0.5, window: float = 600.0) -> list[bool]:
+    """The mean rule, but a place alarms once: a track that meets the rule where an earlier
+    alarm was raised (centre within `radius` box widths, similar width) in the last
+    `window` seconds is held back while it stays there, and released once it moves away.
+
+    A parked vehicle under shop light is lost and found again by the tracker many times;
+    with the plain rule each new track is a new alarm. A moving ambulance that crosses an
+    earlier alarm's place is only held back until it leaves it. Same idea as a memory of
+    false-positive places on a fixed camera (US12430919; BEM, arXiv 2604.11714), but kept
+    to places this run has alarmed at, with no training."""
+    votes = TrackVotes()
+    released: set[int] = set()
+    places: list[list[float]] = []  # [cx, cy, w, last time seen]
+    alarm = []
+    for t, probs, frame in zip(times, frames, boxes, strict=True):
+        for track_id, p in probs.items():
+            votes.add(track_id, p)
+        on = False
+        for track_id in probs:
+            if not votes.is_ambulance(track_id, min_frames, threshold):
+                continue
+            box = frame.get(track_id) or frame.get(str(track_id))
+            if box is None:
+                on = on or track_id in released
+                continue
+            cx, cy, w = box
+            match = None
+            for place in places:
+                px, py, pw, seen = place
+                if t - seen <= window and 0.67 <= w / max(pw, 1.0) <= 1.5 \
+                        and ((cx - px) ** 2 + (cy - py) ** 2) ** 0.5 <= radius * max(pw, 1.0):
+                    match = place
+                    break
+            if match is not None:
+                match[3] = t
+                if track_id not in released:
+                    continue
+            elif track_id not in released:
+                released.add(track_id)
+                places.append([cx, cy, w, t])
+            on = on or track_id in released
         alarm.append(on)
     return alarm
 
@@ -210,13 +293,14 @@ def main() -> None:
     runs = {}
     for video in args.videos:
         detector = YOLO(str(args.detector))  # a fresh tracker state per video
-        times, frames, raw_frames = run_video(video, detector, classifier, amb, one_stage, args)
+        times, frames, raw_frames, geo_frames = run_video(video, detector, classifier, amb, one_stage, args)
         capture = cv2.VideoCapture(str(video))
         fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
         capture.release()
         labelled = labelled_times(args.labels, video.stem, fps) if args.labels else ([], [])
         runs[video.stem] = {"times": times, "frames": [{str(k): round(v, 4) for k, v in f.items()} for f in frames],
                             "frames_no_tta": [{str(k): round(v, 4) for k, v in f.items()} for f in raw_frames],
+                            "boxes": [{str(k): v for k, v in g.items()} for g in geo_frames],
                             "with_ambulance": labelled[0], "without": labelled[1]}
         if args.intervals:
             spec = json.loads(args.intervals.read_text(encoding="utf-8"))["videos"][video.stem]

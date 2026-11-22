@@ -167,6 +167,53 @@ two labelled frames; not done for this sprint.
 Flip TTA with v5f: same passages, slightly fewer false alarms at mean >= 0.6 (11 vs 14);
 not adopted with v5e because it was not measured there.
 
+## Parked vehicles and a motion rule (22.11.2026)
+
+Held-out test with the adaptive rate (chosen on the development set): videos with an
+ambulance found 7/8, but ambulance-free videos with an alarm 3/6 (1/6 at a fixed
+12.5 frames/s). The development set has only two ambulance-free videos, so it could not
+show this. The Sariyer recording (53 min, a camera v5e never saw) is therefore used as
+a false-alarm development set: 44 alarm spans at mean >= 0.5, nearly all on parked
+vehicles (a yellow taxi, a white van, a red car) under blue shop lighting. The tracker
+loses and finds them again, and every new track is a new alarm.
+
+Rule tested next: a track can alarm only after its box centre has moved at least one
+box width (`only_moving`). Drivers are alerted with the vehicle's speed and direction
+(FR-08), so a parked vehicle is not one they must give way to. Caveat: several test
+ambulances stand still at crash scenes; results are reported with and without the rule.
+The frame-count rule is also replaced by a time rule (`alarm_from_tracks_time`), so a
+faster read rate does not make the rule easier to meet.
+
+### How others suppress alarms on things that do not move (search, 22.11.2026)
+
+Read from abstracts, patent claims and summaries, not full re-implementations:
+
+- **Background memory per fixed camera** (BEM, arXiv 2604.11714): keeps embeddings of the
+  quasi-static background and suppresses detections that match it, without retraining.
+  This fits our case well: the Sariyer alarms are the same parked vehicles in the same
+  places. Our version would be a per-camera memory of classifier crops that alarmed
+  while not moving; a new track that matches one closely (embedding distance, same
+  place) is held back. Not built yet. It needs a few minutes of footage per camera and
+  must be cleared when the scene changes.
+- **Memory of false-positive regions** (patent US12430919) and **per-camera masks** over
+  places that keep alarming (US12387480): the same idea in a simpler form. A mask is
+  cheap but would also hide a real ambulance parked at the same spot.
+- **Tracker feedback for stopped objects** (Senior, Tian, Lu, CCNY, AVSS 2010): without
+  feedback a stopped object fades into the background and comes back as a new target,
+  as our re-found tracks do. Their fix keeps the stopped object's identity. For us that
+  means a longer track buffer or re-identification, so one parked taxi is one alarm and
+  not twenty.
+- **Hard negatives from recurring background** (SciTePress 2019, 73768): the recurring
+  false detections of a camera are the best negatives for it. We did this with İzmir
+  hard negatives; Sariyer stays unseen because it is the false-alarm development set.
+- **Self-supervised scene adaptation** (CVPR 2023): fine-tunes per camera from tracker
+  pseudo-labels. Too heavy for this sprint.
+
+Order chosen: (1) motion rule, already built; (2) count parked-vehicle alarms once per
+place (the tracker-feedback idea, without changing the detector); (3) per-camera memory
+only if (1) and (2) are not enough. All three are judged on the development set and
+Sariyer only, never on test2 or İzmir.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
@@ -195,4 +242,6 @@ Akyon et al., SAHI, arXiv 2202.06934 · Keles et al., arXiv 2203.04799 ·
 Sochor et al., BoxCars, CVPR 2016 · Tas et al., Sensors 22(13) 4740, 2022 ·
 Peng et al., arXiv 1605.06695 · ABLDataset, arXiv 2603.05058 · FlashLightNet,
 Sensors 25(20) 6423, 2025 · Self-Supervised Scene Adaptation, CVPR 2023 ·
-IEC 62676-4 pixel density (Axis white paper) · Resmi Gazete 08.01.2025 no. 32776.
+IEC 62676-4 pixel density (Axis white paper) · Resmi Gazete 08.01.2025 no. 32776 ·
+BEM, arXiv 2604.11714 · US12430919 · US12387480 · Senior, Tian, Lu, AVSS 2010 ·
+SciTePress 2019 paper 73768.

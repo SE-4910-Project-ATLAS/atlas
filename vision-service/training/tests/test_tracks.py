@@ -36,3 +36,38 @@ def test_time_rule_does_not_depend_on_read_rate():
     fast = alarm_from_tracks_time([i * 0.08 for i in range(14)], [{1: 0.9}] * 14, 1.0, 0.5)
     assert slow[-1] and not any(slow[:-1])
     assert fast[-1] and not any(fast[:-1])
+
+
+def test_only_moving_drops_parked_tracks():
+    from atlas_training.tracks import only_moving
+
+    frames = [{1: 0.9, 2: 0.9}] * 3
+    boxes = [{"1": [100, 100, 50], "2": [300, 300, 50]},
+             {"1": [100, 101, 50], "2": [330, 300, 50]},
+             {"1": [101, 100, 50], "2": [360, 300, 50]}]
+    out = only_moving(frames, boxes, 1.0)
+    assert out == [{}, {}, {2: 0.9}]
+
+
+def test_a_parked_vehicle_found_again_alarms_once():
+    from atlas_training.tracks import alarm_once_per_place
+
+    # Track 1 meets the rule at (100, 100), is lost; track 2 is found at the same place.
+    times = [i * 0.2 for i in range(20)]
+    frames = [{1: 0.9}] * 8 + [{}] * 2 + [{2: 0.9}] * 10
+    boxes = [{1: [100, 100, 50]}] * 8 + [{}] * 2 + [{2: [102, 101, 50]}] * 10
+    alarm = alarm_once_per_place(times, frames, boxes, min_frames=5, threshold=0.5)
+    assert any(alarm[:8])
+    assert not any(alarm[10:])
+
+
+def test_a_track_held_back_at_an_old_place_is_released_when_it_moves():
+    from atlas_training.tracks import alarm_once_per_place
+
+    times = [i * 0.2 for i in range(20)]
+    frames = [{1: 0.9}] * 6 + [{2: 0.9}] * 14
+    boxes = [{1: [100, 100, 50]}] * 6 + [{2: [100 + 2 * i, 100, 50]} for i in range(14)]
+    alarm = alarm_once_per_place(times, frames, boxes, min_frames=5, threshold=0.5)
+    assert alarm[5]        # track 1 alarms at a new place
+    assert not alarm[11]   # track 2 meets the rule 10 px from that place: held back
+    assert alarm[19]       # 26 px away (more than half a box width): released
