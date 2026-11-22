@@ -27,3 +27,12 @@ def test_sprt_needs_several_confident_frames():
     frames = [{1: 0.99}, {1: 0.99}, {1: 0.99}]
     assert alarm_sprt(frames, upper=5.0, clip=2.0) == [False, False, True]
     assert alarm_sprt([{1: 0.99}, {1: 0.01}, {1: 0.99}, {1: 0.99}], upper=5.0) == [False] * 4
+
+
+def test_time_rule_does_not_depend_on_read_rate():
+    from atlas_training.tracks import alarm_from_tracks_time
+
+    slow = alarm_from_tracks_time([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], [{1: 0.9}] * 6, 1.0, 0.5)
+    fast = alarm_from_tracks_time([i * 0.08 for i in range(14)], [{1: 0.9}] * 14, 1.0, 0.5)
+    assert slow[-1] and not any(slow[:-1])
+    assert fast[-1] and not any(fast[:-1])

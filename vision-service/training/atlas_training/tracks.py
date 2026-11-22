@@ -61,7 +61,7 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
     # --candidate-fps for --candidate-hold seconds.
     fast = max(1, round(fps / args.candidate_fps)) if args.candidate_fps else stride
     fast_until = -1.0
-    times, frames = [], []
+    times, frames, raw_frames = [], [], []
     index, last_read = 0, -10**9
     while True:
         ok = capture.grab()
@@ -76,13 +76,16 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
             r = detector.track(image, persist=True, tracker=str(args.tracker), conf=args.det_conf,
                                imgsz=args.imgsz, classes=VEHICLE_CLASSES, agnostic_nms=True, verbose=False)[0]
             probs: dict[int, float] = {}
+            raw: dict[int, float] = {}
             if r.boxes is not None and r.boxes.id is not None:
                 boxes = r.boxes.xyxy.cpu().numpy()
                 ids = r.boxes.id.int().cpu().tolist()
                 crops = [cv2.resize(square_crop(image, b, args.pad), (args.size, args.size)) for b in boxes]
                 ps = [c.probs.data[amb].item() for c in classifier.predict(crops, imgsz=args.size, verbose=False)]
+                raw = dict(zip(ids, ps, strict=True))
                 if args.tta:
-                    # Test-time augmentation: average with the mirrored crop.
+                    # Test-time augmentation: average with the mirrored crop. The unflipped
+                    # scores are kept too, so one run gives both results.
                     flipped = [c.probs.data[amb].item() for c in
                                classifier.predict([cv2.flip(x, 1) for x in crops], imgsz=args.size, verbose=False)]
                     ps = [(a + b) / 2 for a, b in zip(ps, flipped, strict=True)]
@@ -101,9 +104,10 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
                     fast_until = index / fps + args.candidate_hold
             times.append(index / fps)
             frames.append(probs)
+            raw_frames.append(raw)
         index += 1
     capture.release()
-    return times, frames
+    return times, frames, raw_frames
 
 
 def alarm_sprt(frames: list[dict], upper: float, clip: float = 2.0, prior: float = 0.5) -> list[bool]:
@@ -126,6 +130,28 @@ def alarm_sprt(frames: list[dict], upper: float, clip: float = 2.0, prior: float
             if total[track_id] >= upper:
                 decided.add(track_id)
         alarm.append(any(t in decided for t in probs))
+    return alarm
+
+
+def alarm_from_tracks_time(times: list[float], frames: list[dict], min_seconds: float, threshold: float,
+                           min_frames: int = 3) -> list[bool]:
+    """Like alarm_from_tracks, but a track must have been seen for at least `min_seconds`
+    (and `min_frames` frames), so the rule means the same time whatever the read rate:
+    with a variable rate, a frame count would be easier to reach while reading faster."""
+    total: dict[int, float] = {}
+    count: dict[int, int] = {}
+    first: dict[int, float] = {}
+    alarm = []
+    for t, probs in zip(times, frames, strict=True):
+        on = False
+        for track_id, p in probs.items():
+            total[track_id] = total.get(track_id, 0.0) + p
+            count[track_id] = count.get(track_id, 0) + 1
+            first.setdefault(track_id, t)
+            n = count[track_id]
+            if n >= min_frames and t - first[track_id] >= min_seconds and total[track_id] / n >= threshold:
+                on = True
+        alarm.append(on)
     return alarm
 
 
@@ -184,12 +210,13 @@ def main() -> None:
     runs = {}
     for video in args.videos:
         detector = YOLO(str(args.detector))  # a fresh tracker state per video
-        times, frames = run_video(video, detector, classifier, amb, one_stage, args)
+        times, frames, raw_frames = run_video(video, detector, classifier, amb, one_stage, args)
         capture = cv2.VideoCapture(str(video))
         fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
         capture.release()
         labelled = labelled_times(args.labels, video.stem, fps) if args.labels else ([], [])
         runs[video.stem] = {"times": times, "frames": [{str(k): round(v, 4) for k, v in f.items()} for f in frames],
+                            "frames_no_tta": [{str(k): round(v, 4) for k, v in f.items()} for f in raw_frames],
                             "with_ambulance": labelled[0], "without": labelled[1]}
         if args.intervals:
             spec = json.loads(args.intervals.read_text(encoding="utf-8"))["videos"][video.stem]

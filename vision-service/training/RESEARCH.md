@@ -153,6 +153,20 @@ van behind a tree next to a turquoise car). That is 1.2 per hour, 95 % upper bou
 three), so NFR-05 cannot be shown with the footage we have even at zero alarms; the
 report gives the measured rate and its bound.
 
+## Classifier v5f rejected (22.11.2026)
+
+v5f = v5e training set + 2,252 ambulance crops propagated along tracks + 48 Sariyer
+negatives. Validation accuracy 97.4 % (v5e 97.7 %). On the ambulance-free MOBESE
+compilation of the development set it raised 13 alarm spans at mean >= 0.5, v5e none;
+the spans are white minibuses and vans. Likely cause: the tracker sometimes jumps from
+the ambulance to a nearby white vehicle, so some propagated "ambulance" crops show vans;
+a sample check (a few per cent wrong) was not strict enough, because those few crops
+teach exactly the confusion we want to remove. v5e stays the classifier. A safer way to
+propagate would keep only crops whose box stays close to the box interpolated between
+two labelled frames; not done for this sprint.
+Flip TTA with v5f: same passages, slightly fewer false alarms at mean >= 0.6 (11 vs 14);
+not adopted with v5e because it was not measured there.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
