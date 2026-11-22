@@ -214,6 +214,42 @@ place (the tracker-feedback idea, without changing the detector); (3) per-camera
 only if (1) and (2) are not enough. All three are judged on the development set and
 Sariyer only, never on test2 or İzmir.
 
+### Motion rule rejected; what separates false alarms (22.11.2026, evening)
+
+- Motion rule on the development set: passages 13/16 → 8/16 (half a box width) and 3/16
+  (one width). An approaching ambulance grows instead of moving sideways, and news
+  cameras follow it. Rejected.
+- Once per place (`alarm_once_per_place`): development set unchanged at 13/16, false spans
+  9 → 6. The Sariyer result decides whether it is kept.
+- The development set cannot measure false alarms: most of its "false" alarming tracks
+  score p = 1.00 for every frame (PGcW tracks 6, 7, 9; D7UW 360), so they are almost
+  certainly real ambulances in unlabelled frames. Score statistics (median, share of
+  frames above 0.5) do not separate real from false there.
+- Sariyer (earlier run): 11 of 12 alarming tracks lie in one 5.5-minute window (parked
+  vehicles under blue shop light), with mean 0.53-0.67 and never near 1.0.
+
+### Flashing-light evidence
+
+Right of way needs light and sound signals together (Geçiş Üstünlüğüne Sahip Araçlar
+Hakkında Yönetmelik, from 2918 KTK art. 71), so a driver must give way only to an ambulance
+with its beacon on. Shop light and red advertising are steady; a beacon flashes.
+`atlas_training.lights` saves the lit red and blue share of each vehicle box per frame;
+the rule `alarm_with_lights` lets a track that has flashed (range of either share within
+1 s at least `min_flicker`) alarm at mean 0.5 and asks tracks that have not for a
+stricter mean (0.7, 0.8, or a requirement at 1.01). Similar ideas: per-frame light
+classification with a temporal smoother (Fan et al., Aurora, arXiv 2212.13696), matching
+the flash frequency (US11341753 family), a cascade of colour, persistence and per-place
+cooldown before an alarm (arXiv 2607.03131).
+Thresholds: on labelled ambulance boxes, S >= 120 / V >= 200 found lit pixels in only
+0-46 % of boxes per clip (beacon cores are nearly white in compressed video); S >= 80 /
+V >= 160 is used. Open question for the team: making the light a requirement (strict
+1.01) changes FR-06 scope from "ambulance" to "ambulance on duty", so it is reported
+but not chosen without the team.
+
+Next if these are not enough: hard negatives of Turkish white minibuses and panel vans
+from new footage (not İzmir or Sariyer, which stay for measuring), as the site-negative
+mining in the vehicle-detection literature (e.g. US8971581).
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
@@ -244,4 +280,5 @@ Peng et al., arXiv 1605.06695 · ABLDataset, arXiv 2603.05058 · FlashLightNet,
 Sensors 25(20) 6423, 2025 · Self-Supervised Scene Adaptation, CVPR 2023 ·
 IEC 62676-4 pixel density (Axis white paper) · Resmi Gazete 08.01.2025 no. 32776 ·
 BEM, arXiv 2604.11714 · US12430919 · US12387480 · Senior, Tian, Lu, AVSS 2010 ·
-SciTePress 2019 paper 73768.
+SciTePress 2019 paper 73768 · US11341753 · arXiv 2607.03131 · US8971581 ·
+Geçiş Üstünlüğüne Sahip Araçlar Hakkında Yönetmelik (2918 KTK art. 71).
