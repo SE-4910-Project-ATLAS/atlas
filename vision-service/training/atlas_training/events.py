@@ -68,6 +68,46 @@ def events_from_labels(times_with_ambulance: list[float], times_without: list[fl
     return events
 
 
+def split_at_cuts(events: list[Event], cuts: list[float]) -> list[Event]:
+    """Merge events of the same shot into one passage and never merge across a cut: news
+    videos cut between camera views, and the sparse labels (about one per second) would
+    otherwise turn one ambulance into several passages or join two shots into one."""
+    out: list[Event] = []
+    bounds = [float("-inf"), *sorted(cuts), float("inf")]
+    for lo, hi in zip(bounds, bounds[1:], strict=False):
+        inside = [e for e in events if lo <= e.start < hi]
+        if inside:
+            out.append(Event(min(e.start for e in inside), max(e.end for e in inside)))
+    return out
+
+
+def shot_cuts(video, every: float = 0.2, threshold: float = 0.5) -> list[float]:
+    """Times (s) of hard cuts: HSV-histogram correlation between frames `every` seconds
+    apart below `threshold` (colour-histogram shot detection, Lienhart 1999)."""
+    import cv2
+
+    capture = cv2.VideoCapture(str(video))
+    fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
+    step = max(1, round(every * fps))
+    cuts, previous, index = [], None, 0
+    while True:
+        ok = capture.grab()
+        if not ok:
+            break
+        if index % step == 0:
+            ok, frame = capture.retrieve()
+            if ok:
+                hsv = cv2.cvtColor(cv2.resize(frame, (160, 90)), cv2.COLOR_BGR2HSV)
+                hist = cv2.calcHist([hsv], [0, 1], None, [30, 32], [0, 180, 0, 256])
+                cv2.normalize(hist, hist)
+                if previous is not None and cv2.compareHist(previous, hist, cv2.HISTCMP_CORREL) < threshold:
+                    cuts.append(index / fps)
+                previous = hist
+        index += 1
+    capture.release()
+    return cuts
+
+
 def alarm_spans(times: list[float], alarm: list[bool]) -> list[Event]:
     """Runs of consecutive read frames with the alarm on."""
     spans: list[Event] = []

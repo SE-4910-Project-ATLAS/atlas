@@ -55,6 +55,8 @@ kiwisolver==1.5.1
     # via
     #   matplotlib
     #   roboflow
+lap==0.5.14
+    # via -r requirements.in
 markdown-it-py==4.3.0
     # via rich
 markupsafe==3.0.4
@@ -73,6 +75,7 @@ numpy==2.5.5
     # via
     #   -r requirements.in
     #   contourpy
+    #   lap
     #   matplotlib
     #   opencv-python
     #   opencv-python-headless

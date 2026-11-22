@@ -20,6 +20,13 @@ Datasets, weights and run outputs are never committed (see `.gitignore`).
 | `atlas_training/frames.py` | Takes distinct frames from video clips, with a model's boxes as pre-labels |
 | `atlas_training/labelstudio.py` | Loads frames into a local Label Studio project and exports the checked labels as a dataset source |
 | `atlas_training/metrics.py` | Precision, recall and AP@0.5 for one class, independent of the model's class list |
+| `atlas_training/mine.py` | Finds frames worth labelling from where the model flickers in video |
+| `atlas_training/events.py` | Smoothed per-frame alarm, scored per ambulance passage |
+| `atlas_training/crops.py` | Vehicle crop set (ambulance / other) for the classifier of the two-stage system |
+| `atlas_training/lowres.py` | Adds low-resolution copies of the train crops |
+| `atlas_training/twostage.py` | COCO vehicle detector + crop classifier, scored per frame; fusion with a one-stage model |
+| `atlas_training/tracks.py` | Tracks vehicles, decides per track (mean classifier score) and scores per clip (NFR-04) |
+| `RESEARCH.md` | Findings from the literature and our measurements, and the decision taken for each problem |
 
 ## Setup
 
@@ -122,6 +129,23 @@ no ambulance (per hour on footage without ambulances, for FR-11).
 ```bash
 python -m atlas_training.events path/to/test/clips/*.mp4 --labels datasets/raw/own_cctv-v1/test/labels   --weights runs/train/ambulance_v4/weights/best.pt --out runs/eval/events_v4.json
 ```
+
+### Two-stage recognition and clip-level scoring
+
+A generic COCO detector finds almost all ambulances as vehicles; the one-stage ambulance
+detector misses most Turkish ones (see `RESEARCH.md`). So vehicles are cropped and a
+classifier decides "ambulance or not"; in video the decision is the mean over the
+vehicle's track, and NFR-04 is scored per clip.
+
+```bash
+python -m atlas_training.crops configs/ambulance_v5.yaml --out datasets/crops_v5b --neg-per-pos 8
+python -m atlas_training.lowres datasets/crops_v5b --out datasets/crops_v5e
+yolo classify train data=datasets/crops_v5e model=weights/yolo11s-cls.pt imgsz=224 epochs=30 project=runs/cls name=crops_v5e
+python -m atlas_training.twostage configs/ambulance_v5.yaml --classifier runs/cls/crops_v5e/weights/best.pt   --compare v3=runs/train/ambulance_v3/weights/best.pt@640 --out runs/eval/ambulance_v5/twostage.json
+python -m atlas_training.tracks path/to/test/clips/*.mp4 --labels datasets/raw/own_cctv-v2/test/labels   --classifier runs/cls/crops_v5e/weights/best.pt --one-stage runs/train/ambulance_v3/weights/best.pt@640   --out runs/eval/tracks/clips.json
+```
+
+Thresholds are chosen on val, not on test.
 
 ## How results stay comparable and reproducible
 

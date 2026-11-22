@@ -33,3 +33,11 @@ def test_score_video_counts_found_events_delay_and_false_alarms():
     assert r["delays_s"] == [1.0]
     assert r["false_alarms"] == 1
     assert r["duration_s"] == 15.0
+
+
+def test_split_at_cuts_merges_within_a_shot_and_never_across():
+    from atlas_training.events import split_at_cuts
+
+    events = [Event(1, 1), Event(5, 6), Event(12, 13), Event(14, 14)]
+    out = split_at_cuts(events, cuts=[10.0])
+    assert [(e.start, e.end) for e in out] == [(1, 6), (12, 14)]

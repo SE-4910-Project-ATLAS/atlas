@@ -14,5 +14,6 @@ torchvision==0.29.2+cu132
 ultralytics==8.4.215
 roboflow==1.7.3
 pyyaml==6.0.3
+lap==0.5.14              # ByteTrack association (atlas_training.tracks); Ultralytics installs it on first use otherwise
 numpy==2.5.5
 pytest==9.2.0

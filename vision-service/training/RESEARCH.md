@@ -38,6 +38,84 @@ is recognising the vehicle as an ambulance, not finding it, and not resolution (
 | Confusable classes | Attention models use few parts; a loss focused on the confusable classes helps (arXiv 1912.06842); errors concentrate on structurally similar classes (vans) | Keep the hardest negatives (white vans, minibuses) at a fixed share of each training batch |
 | Clip/event-level scoring | Frame metrics hide event-level failure: models with > 61% frame AUC reached < 10% event precision (arXiv 2604.09327); event matching by temporal overlap, reward early detection (LaAP) | NFR-04 reported per clip with a fixed rule (an alarm inside the labelled passage, +/- 1 s), plus time to first alarm |
 
+## Clip-level results, first run (21.11.2026)
+
+Two-stage system with ByteTrack, decision = mean p(ambulance) over the track, 9 Turkish
+test videos (7 with ambulances, 2 MOBESE compilations without). Passages = labelled
+ambulance frames of one shot (shot cuts by HSV histogram correlation).
+
+| Setting | Passages found | Videos with ambulance found | Videos without ambulance with an alarm |
+| --- | --- | --- | --- |
+| min 5 frames, mean >= 0.5 (fixed before looking at test) | 12/16 | 6/7 | 0/2 |
+| min 5 frames, mean >= 0.8 | 9/16 | 5/7 | 0/2 |
+
+- Fusing v3 into the track scores changed nothing at clip level.
+- Alarm spans outside labelled passages in videos with ambulances were checked by eye:
+  nearly all show real ambulances in frames that are not labelled (labels are one frame
+  per second, and frames between labelled empty frames are not all empty). So false
+  alarms are counted only on videos checked to have no ambulance; 3.7 min is far too
+  little for NFR-05 and more ambulance-free footage is needed.
+- Missed passages: Sivas (534 px video, ambulance tiny and overturned), Usak 21 s
+  (blurred, behind a car), Kutahya 27 s (overturned ambulance seen from below),
+  a one-frame passage in the night crash. Hard or borderline cases.
+- Thresholds: 5 frames and 0.5 were fixed in advance; the other settings are a
+  sensitivity check only, not a choice made on test.
+
+## Classifier calibration and threshold (21.11.2026)
+
+`calibrate.py` on the val crops of `crops_v5e` (3,465 crops, 385 ambulances), classifier
+trained with low-resolution copies:
+
+- The classifier is already well calibrated: temperature 1.47, expected calibration
+  error 0.010 before and 0.006 after. Temperature scaling is not needed in the pipeline.
+- Crop level on val: threshold 0.5 gives precision 0.94 / recall 0.85, 0.6 gives
+  0.96 / 0.83. The difference is small, so the track threshold stays at the 0.5 fixed in
+  advance; 0.6 is reported only as a sensitivity check.
+- Gap found: 363 of the 385 val ambulances are wider than 100 px (mostly foreign
+  street-level images), so val says almost nothing about small or far ambulances.
+  Size-dependent results must come from the Turkish test videos.
+
+## Where the two-stage system still misses (Turkish test frames, classifier v5e, p >= 0.5)
+
+Recall by ambulance width: 40-64 px 2/24, 64-100 px 12/21, 100-200 px 23/50, > 200 px
+36/64. So below ~64 px it fails, but above that recall stays near 0.5 whatever the size:
+size is not the main cause. Of the 55 missed ambulances wider than 100 px, 19 have no
+COCO vehicle box and 36 have a box with a low classifier score. Looked at by eye:
+
+1. Head-on, moving ambulance (Ankara): clearly an ambulance with the red crescent, scored
+   0.00-0.27. The training crops have few frontal Turkish ambulances.
+2. Night scenes with blue/red glare: the COCO detector gives no box at all ("no box").
+3. Overturned or crashed ambulances (Kutahya, night crash), and one carried on a tow
+   truck: low scores or boxes that do not match. These are not ambulances on duty that
+   drivers must give way to; whether they belong in the FR-06 test is a scope question.
+   Results are reported both with and without them, never by silently dropping them.
+
+Next steps from this: more frontal Turkish ambulance crops (mined from training videos),
+and for night glare, let the one-stage detector add boxes the COCO detector misses.
+
+## Held-out test (test2) and the next round (22.11.2026)
+
+New held-out set `D:/code/atlas-data/clips/test2`: 14 Turkish videos never used for
+training or tuning, labelled as time intervals (`labels.json`): 8 with an ambulance,
+6 without (MOBESE compilations, 23 min in all). Old 9 test videos become the
+development set on which settings are chosen; test2 is scored once per model.
+
+Classifier v5e, 12.5 frames/s read, fixed in advance (>= 5 frames, mean >= 0.5):
+videos with an ambulance found 7/8 (87.5%, Wilson 95% interval 53-98%), passages 8/9,
+ambulance-free videos with an alarm 1/6, 8 alarm spans outside passages in 32 min.
+All 8 checked by eye: real false alarms (white minibuses and vans, a truck with red
+advertising, red/blue lights at night, an emblem van); 7 of 8 last under 1.6 s.
+Chosen on the development set: mean >= 0.6 (false alarm spans 5 -> 2 at equal recall).
+
+Next round:
+- Positives: 2,252 more Turkish ambulance crops from labelled ambulances followed along
+  their tracks in the training videos (many frontal views), checked on a sample.
+- Negatives: false alarms mined from the Sariyer recording (different camera).
+- Frames read at 5 per second (NFR-02) instead of 12.5, so the track rule means the
+  same time on every clip and long footage can be processed.
+- False alarms per hour on 5 h of the Izmir square camera (2.5 h day, 2.5 h night),
+  measurement only: this camera is never used for training.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
