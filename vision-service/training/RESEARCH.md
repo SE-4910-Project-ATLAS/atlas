@@ -116,6 +116,33 @@ Next round:
 - False alarms per hour on 5 h of the Izmir square camera (2.5 h day, 2.5 h night),
   measurement only: this camera is never used for training.
 
+## Frame rate (development set, classifier v5e, 22.11.2026)
+
+| Reading | Frames read | Passages | Videos with ambulance | False alarm spans |
+| --- | --- | --- | --- | --- |
+| 12.5/s, >= 5 frames, mean >= 0.5 | ~8,800 | 11/16 | 6/7 | 5 |
+| 5/s fixed (NFR-02 minimum), same rule | 3,263 | 10/16 | 5/7 | 5 |
+| 5/s, 12.5/s for 3 s after a track scores >= 0.3 | 5,517 | 13/16 | 6/7 | 9 |
+
+Reading only 5 frames per second loses ambulances (tracks break, fewer frames to vote).
+Raising the rate while a candidate is in view, as NFR-02 already allows for cameras with
+an emergency-vehicle candidate, recovers them at 37% fewer frames than 12.5/s, at the
+cost of more short false alarms. The false alarms are what the next classifier targets.
+
+## Track decision rule: mean vs sequential test (development set, v5e, adaptive rate)
+
+| Rule | Passages | Videos with ambulance | False alarm spans |
+| --- | --- | --- | --- |
+| mean >= 0.5, >= 5 frames | 13/16 | 6/7 | 9 |
+| mean >= 0.6, >= 5 frames | 11/16 | 5/7 | 4 |
+| SPRT, evidence >= 3, per-frame log-odds clipped to +/- 2 | 12/16 | 6/7 | 5 |
+
+The SPRT (Wald; multiple-look fusion, Koch et al. CVPR-W 2013) sums each frame's
+log-odds, clipped so that one over-confident frame cannot decide and correlated frames
+are not over-counted. It sits between the two mean thresholds: one passage less than
+mean >= 0.5 for four false alarms less. With 16 passages a difference of one is within
+noise, so the rule is chosen again with the next classifier, on this set only.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar

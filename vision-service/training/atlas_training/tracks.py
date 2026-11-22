@@ -56,13 +56,20 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
     # A fixed processing rate whatever the video's frame rate, so that --min-frames means
     # the same time on every clip (NFR-02: >= 5 FPS per stream).
     stride = max(1, round(fps / args.target_fps)) if args.target_fps else args.stride
+    # Candidate mode (NFR-02: verification at the stream's full rate on cameras with an
+    # emergency-vehicle candidate): while any track scores >= --candidate-p, read at
+    # --candidate-fps for --candidate-hold seconds.
+    fast = max(1, round(fps / args.candidate_fps)) if args.candidate_fps else stride
+    fast_until = -1.0
     times, frames = [], []
-    index = 0
+    index, last_read = 0, -10**9
     while True:
         ok = capture.grab()
         if not ok:
             break
-        if index % stride == 0:
+        step = fast if index / fps <= fast_until else stride
+        if index - last_read >= step:
+            last_read = index
             ok, image = capture.retrieve()
             if not ok:
                 break
@@ -85,11 +92,36 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
                             if overlap[k, j] >= 0.5:
                                 ps[k] = max(ps[k], float(os_[j]))
                 probs = dict(zip(ids, ps, strict=True))
+                if args.candidate_fps and max(ps, default=0.0) >= args.candidate_p:
+                    fast_until = index / fps + args.candidate_hold
             times.append(index / fps)
             frames.append(probs)
         index += 1
     capture.release()
     return times, frames
+
+
+def alarm_sprt(frames: list[dict], upper: float, clip: float = 2.0, prior: float = 0.5) -> list[bool]:
+    """Wald's sequential probability ratio test per track: the evidence of a frame is the
+    log-odds of its classifier probability minus the log-odds of `prior`, clipped to
+    +/- `clip` so that one over-confident frame cannot decide alone (frames of a track are
+    correlated, so a plain sum would overcount them). A track becomes an ambulance when its
+    summed evidence reaches `upper`; it stays one while visible (Koch et al., CVPR-W 2013:
+    multiple-look fusion with the SPRT)."""
+    import math
+
+    base = math.log(prior / (1 - prior))
+    total: dict[int, float] = {}
+    decided: set[int] = set()
+    alarm = []
+    for probs in frames:
+        for track_id, p in probs.items():
+            p = min(max(p, 1e-6), 1 - 1e-6)
+            total[track_id] = total.get(track_id, 0.0) + max(-clip, min(clip, math.log(p / (1 - p)) - base))
+            if total[track_id] >= upper:
+                decided.add(track_id)
+        alarm.append(any(t in decided for t in probs))
+    return alarm
 
 
 def alarm_from_tracks(frames: list[dict], min_frames: int, threshold: float) -> list[bool]:
@@ -115,6 +147,9 @@ def main() -> None:
     parser.add_argument("--size", type=int, default=224)
     parser.add_argument("--stride", type=int, default=2, help="read every n-th frame (ignored with --target-fps)")
     parser.add_argument("--target-fps", type=float, help="read about this many frames per second, e.g. 5 (NFR-02)")
+    parser.add_argument("--candidate-fps", type=float, help="rate while a candidate is seen, e.g. 12.5")
+    parser.add_argument("--candidate-p", type=float, default=0.3, help="track score that makes a candidate")
+    parser.add_argument("--candidate-hold", type=float, default=3.0, help="seconds the faster rate is kept")
     parser.add_argument("--min-frames", type=int, nargs="+", default=[3, 5])
     parser.add_argument("--threshold", type=float, nargs="+", default=[0.5, 0.6, 0.7, 0.8])
     parser.add_argument("--merge", type=float, default=3.0)

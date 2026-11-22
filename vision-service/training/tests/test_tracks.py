@@ -19,3 +19,11 @@ def test_one_confident_frame_does_not_raise_an_alarm():
 def test_alarm_follows_the_track_while_it_is_visible():
     frames = [{1: 0.8}, {1: 0.8}, {1: 0.8, 2: 0.1}, {2: 0.1}, {1: 0.8}]
     assert alarm_from_tracks(frames, min_frames=3, threshold=0.5) == [False, False, True, False, True]
+
+
+def test_sprt_needs_several_confident_frames():
+    from atlas_training.tracks import alarm_sprt
+
+    frames = [{1: 0.99}, {1: 0.99}, {1: 0.99}]
+    assert alarm_sprt(frames, upper=5.0, clip=2.0) == [False, False, True]
+    assert alarm_sprt([{1: 0.99}, {1: 0.01}, {1: 0.99}, {1: 0.99}], upper=5.0) == [False] * 4
