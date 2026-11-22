@@ -251,6 +251,13 @@ V >= 160 is used. Open question for the team: making the light a requirement (st
 but not chosen without the team. Decision (Eren, 22.11.2026): light lowers the bar, it is not
 required; only strict 0.7 / 0.8 can be chosen, 1.01 is reported for reference.
 
+Development set with light fractions (l_dev, v5e): a flashing track is seen in 14/16
+passages at min_flicker 0.003, 12/16 at 0.01, 11/16 at 0.03. Light rule with strict 0.7
+or 0.8 keeps 13/16 passages and 6/7 clips only at 0.003; at 0.01 or 0.03 it loses 1-2
+passages. Light as a requirement (1.01): 12/16, 9/16, 6/16, which supports the decision
+not to require it. Whether 0.003 is above the flicker that compression and box jitter
+give a parked vehicle is decided on Sariyer.
+
 Next if these are not enough: hard negatives of Turkish white minibuses and panel vans
 from new footage (not İzmir or Sariyer, which stay for measuring), as the site-negative
 mining in the vehicle-detection literature (e.g. US8971581).
