@@ -37,6 +37,8 @@ RULES: list[tuple[str, dict]] = (
     + [("place", {"n": 5, "threshold": t, "radius": 0.5, "window": w}) for t in (0.5, 0.6) for w in (600.0, 1800.0)]
     + [("lights", {"n": 5, "threshold": 0.5, "strict": s, "min_flicker": f})
        for s in (0.7, 0.8, 1.01) for f in (0.003, 0.01, 0.03)]
+    + [("place_lights", {"n": 5, "threshold": 0.5, "radius": 0.5, "window": 1800.0, "strict": s,
+                         "min_flicker": f}) for s in (0.7, 0.8) for f in (0.003, 0.01, 0.03)]
 )
 MIN_MOVES = (None, 0.5, 1.0)
 
@@ -52,6 +54,9 @@ def decide(rule: str, params: dict, times: list[float], frames: list[dict], boxe
     if rule == "place":
         return alarm_once_per_place(times, frames, boxes, params["n"], params["threshold"],
                                     params["radius"], params["window"])
+    if rule == "place_lights":
+        return alarm_once_per_place(times, frames, boxes, params["n"], params["threshold"], params["radius"],
+                                    params["window"], lights, params["strict"], params["min_flicker"])
     if rule == "lights":
         return alarm_with_lights(times, frames, lights, params["n"], params["threshold"],
                                  params["strict"], params["min_flicker"])
@@ -130,9 +135,9 @@ def main() -> None:
 
     rows = []
     for rule, params in RULES:
-        if rule == "lights" and not all("lights" in r for r in runs.values()):
+        if rule in ("lights", "place_lights") and not all("lights" in r for r in runs.values()):
             continue
-        for min_move in MIN_MOVES if rule not in ("place", "lights") else (None,):
+        for min_move in MIN_MOVES if rule not in ("place", "lights", "place_lights") else (None,):
             r = score_rule(runs, cuts, rule, params, min_move)
             r["rule"] = label(rule, params, min_move)
             rows.append(r)

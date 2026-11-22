@@ -29,3 +29,15 @@ def test_steady_light_needs_the_strict_threshold_and_flashing_does_not():
     assert on[-1]
     steady_only = [{1: f[1]} for f in frames]
     assert not any(alarm_with_lights(times, steady_only, lights, 5, 0.5, strict=0.9, min_flicker=0.05))
+
+
+def test_place_rule_with_lights_is_stricter_for_steady_tracks():
+    from atlas_training.tracks import alarm_once_per_place
+
+    times = [i * 0.2 for i in range(10)]
+    frames = [{1: 0.7}] * 10
+    boxes = [{1: [100, 100, 50]}] * 10
+    steady = [{1: [0.0, 0.2]}] * 10
+    flashing = [{1: [0.0, 0.2 if i % 2 else 0.0]} for i in range(10)]
+    assert not any(alarm_once_per_place(times, frames, boxes, 5, 0.5, lights=steady, strict=0.8, min_flicker=0.05))
+    assert alarm_once_per_place(times, frames, boxes, 5, 0.5, lights=flashing, strict=0.8, min_flicker=0.05)[-1]

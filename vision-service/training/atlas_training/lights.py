@@ -62,33 +62,44 @@ def flicker(times: list[float], red: list[float], blue: list[float], window: flo
     return out
 
 
+class Flashes:
+    """Which tracks have flashed so far: the lit red or blue share of the box changed by at
+    least `min_flicker` within `window` seconds."""
+
+    def __init__(self, min_flicker: float, window: float = 1.0):
+        self.min_flicker, self.window = min_flicker, window
+        self.history: dict[int, tuple[list[float], list[float], list[float]]] = {}
+        self.flashed: set[int] = set()
+
+    def update(self, track_id: int, t: float, fractions) -> bool:
+        if fractions is not None and track_id not in self.flashed:
+            ts, rs, bs = self.history.setdefault(track_id, ([], [], []))
+            ts.append(t); rs.append(fractions[0]); bs.append(fractions[1])
+            while ts[0] < t - self.window:
+                ts.pop(0); rs.pop(0); bs.pop(0)
+            if max(max(rs) - min(rs), max(bs) - min(bs)) >= self.min_flicker:
+                self.flashed.add(track_id)
+                del self.history[track_id]
+        return track_id in self.flashed
+
+
 def alarm_with_lights(times: list[float], frames: list[dict], lights: list[dict], min_frames: int,
                       threshold: float, strict: float, min_flicker: float, window: float = 1.0) -> list[bool]:
-    """The mean rule with light evidence: a track whose lit red or blue share has changed by
-    at least `min_flicker` within `window` seconds (so far) alarms at mean >= `threshold`;
-    a track that has not flashed needs mean >= `strict`. `strict` > 1 makes the light a
-    requirement (only ambulances on duty have right of way)."""
+    """The mean rule with light evidence: a track that has flashed (see Flashes) alarms at
+    mean >= `threshold`; a track that has not needs mean >= `strict`. `strict` > 1 would
+    make the light a requirement (not chosen: team decision 22.11.2026)."""
     total: dict[int, float] = {}
     count: dict[int, int] = {}
-    history: dict[int, tuple[list[float], list[float], list[float]]] = {}
-    flashed: set[int] = set()
+    flashes = Flashes(min_flicker, window)
     alarm = []
     for t, probs, lit in zip(times, frames, lights, strict=True):
         on = False
         for track_id, p in probs.items():
             total[track_id] = total.get(track_id, 0.0) + p
             count[track_id] = count.get(track_id, 0) + 1
-            fr = lit.get(track_id) or lit.get(str(track_id))
-            if fr is not None and track_id not in flashed:
-                ts, rs, bs = history.setdefault(track_id, ([], [], []))
-                ts.append(t); rs.append(fr[0]); bs.append(fr[1])
-                while ts[0] < t - window:
-                    ts.pop(0); rs.pop(0); bs.pop(0)
-                if max(max(rs) - min(rs), max(bs) - min(bs)) >= min_flicker:
-                    flashed.add(track_id)
-                    del history[track_id]
+            flashed = flashes.update(track_id, t, lit.get(track_id) or lit.get(str(track_id)))
             n = count[track_id]
-            if n >= min_frames and total[track_id] / n >= (threshold if track_id in flashed else strict):
+            if n >= min_frames and total[track_id] / n >= (threshold if flashed else strict):
                 on = True
         alarm.append(on)
     return alarm
