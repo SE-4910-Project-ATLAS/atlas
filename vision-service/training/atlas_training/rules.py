@@ -34,7 +34,7 @@ RULES: list[tuple[str, dict]] = (
     [("frames", {"n": 5, "threshold": t}) for t in (0.5, 0.6, 0.7)]
     + [("time", {"seconds": s, "threshold": t}) for s in (0.5, 1.0, 2.0) for t in (0.5, 0.6)]
     + [("sprt", {"upper": u}) for u in (3.0, 5.0)]
-    + [("place", {"n": 5, "threshold": t, "radius": 0.5, "window": 600.0}) for t in (0.5, 0.6)]
+    + [("place", {"n": 5, "threshold": t, "radius": 0.5, "window": w}) for t in (0.5, 0.6) for w in (600.0, 1800.0)]
     + [("lights", {"n": 5, "threshold": 0.5, "strict": s, "min_flicker": f})
        for s in (0.7, 0.8, 1.01) for f in (0.003, 0.01, 0.03)]
 )

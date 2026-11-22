@@ -219,8 +219,12 @@ Sariyer only, never on test2 or İzmir.
 - Motion rule on the development set: passages 13/16 → 8/16 (half a box width) and 3/16
   (one width). An approaching ambulance grows instead of moving sideways, and news
   cameras follow it. Rejected.
-- Once per place (`alarm_once_per_place`): development set unchanged at 13/16, false spans
-  9 → 6. The Sariyer result decides whether it is kept.
+- Once per place (`alarm_once_per_place`): development set unchanged at 13/16 passages and
+  6/7 clips, false spans 9 → 6. Sariyer (53 min): **44 → 8 alarm spans** with a 10-minute
+  memory, **→ 5 with 30 minutes** (radius 0.5 box widths); the parked vehicles came back
+  every 7-8 minutes. Radius 1.0 or 1.5 loses two development passages and gains nothing
+  on Sariyer. Chosen: radius 0.5, window 30 min. The motion rule gets Sariyer to 0-1 but
+  costs development recall (above), so it stays rejected.
 - The development set cannot measure false alarms: most of its "false" alarming tracks
   score p = 1.00 for every frame (PGcW tracks 6, 7, 9; D7UW 360), so they are almost
   certainly real ambulances in unlabelled frames. Score statistics (median, share of
