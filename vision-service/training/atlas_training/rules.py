@@ -10,6 +10,8 @@ boxes) and scores a fixed list of rules on every run in it:
 - time:   the same, but the track must have been seen for at least s seconds;
 - sprt:   sequential test with clipped log-odds (alarm_sprt);
 - place:  the frames rule, but a place alarms once (alarm_once_per_place);
+- lights: the frames rule, stricter for tracks without flashing red/blue light
+          (atlas_training.lights; only for runs that saved light fractions);
 the first three each with and without the motion rule (only tracks whose box centre moved at least
 `min_move` box widths can alarm).
 
@@ -24,6 +26,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .lights import alarm_with_lights
 from .events import Event, alarm_spans, events_from_labels, score_video, shot_cuts, split_at_cuts
 from .tracks import alarm_from_tracks, alarm_from_tracks_time, alarm_once_per_place, alarm_sprt, only_moving
 
@@ -32,11 +35,14 @@ RULES: list[tuple[str, dict]] = (
     + [("time", {"seconds": s, "threshold": t}) for s in (0.5, 1.0, 2.0) for t in (0.5, 0.6)]
     + [("sprt", {"upper": u}) for u in (3.0, 5.0)]
     + [("place", {"n": 5, "threshold": t, "radius": 0.5, "window": 600.0}) for t in (0.5, 0.6)]
+    + [("lights", {"n": 5, "threshold": 0.5, "strict": s, "min_flicker": f})
+       for s in (0.7, 0.8, 1.01) for f in (0.003, 0.01, 0.03)]
 )
 MIN_MOVES = (None, 0.5, 1.0)
 
 
-def decide(rule: str, params: dict, times: list[float], frames: list[dict], boxes: list[dict]) -> list[bool]:
+def decide(rule: str, params: dict, times: list[float], frames: list[dict], boxes: list[dict],
+           lights: list[dict]) -> list[bool]:
     if rule == "frames":
         return alarm_from_tracks(frames, params["n"], params["threshold"])
     if rule == "time":
@@ -46,6 +52,9 @@ def decide(rule: str, params: dict, times: list[float], frames: list[dict], boxe
     if rule == "place":
         return alarm_once_per_place(times, frames, boxes, params["n"], params["threshold"],
                                     params["radius"], params["window"])
+    if rule == "lights":
+        return alarm_with_lights(times, frames, lights, params["n"], params["threshold"],
+                                 params["strict"], params["min_flicker"])
     raise ValueError(rule)
 
 
@@ -69,7 +78,8 @@ def score_rule(runs: dict, cuts: dict, rule: str, params: dict, min_move: float 
         boxes = [{int(k): v for k, v in b.items()} for b in run["boxes"]]
         if min_move is not None:
             frames = only_moving(frames, boxes, min_move)
-        alarm = decide(rule, params, times, frames, boxes)
+        lights = [{int(k): v for k, v in g.items()} for g in run.get("lights", [{}] * len(times))]
+        alarm = decide(rule, params, times, frames, boxes, lights)
         labelled = events_of(run, cuts.get(name, []), merge)
         if labelled is None:
             spans = len(alarm_spans(times, alarm))
@@ -120,7 +130,9 @@ def main() -> None:
 
     rows = []
     for rule, params in RULES:
-        for min_move in MIN_MOVES if rule != "place" else (None,):
+        if rule == "lights" and not all("lights" in r for r in runs.values()):
+            continue
+        for min_move in MIN_MOVES if rule not in ("place", "lights") else (None,):
             r = score_rule(runs, cuts, rule, params, min_move)
             r["rule"] = label(rule, params, min_move)
             rows.append(r)

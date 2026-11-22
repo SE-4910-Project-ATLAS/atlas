@@ -26,6 +26,7 @@ import numpy as np
 
 from . import config as cfg
 from .crops import VEHICLE_CLASSES, square_crop
+from .lights import lit_fractions
 from .events import Event, events_from_labels, labelled_times, score_video, shot_cuts, split_at_cuts
 from .evaluate import class_index
 from .metrics import box_iou
@@ -61,7 +62,7 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
     # --candidate-fps for --candidate-hold seconds.
     fast = max(1, round(fps / args.candidate_fps)) if args.candidate_fps else stride
     fast_until = -1.0
-    times, frames, raw_frames, geo_frames = [], [], [], []
+    times, frames, raw_frames, geo_frames, light_frames = [], [], [], [], []
     index, last_read = 0, -10**9
     while True:
         ok = capture.grab()
@@ -78,6 +79,7 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
             probs: dict[int, float] = {}
             raw: dict[int, float] = {}
             geo: dict[int, list[float]] = {}
+            lit: dict[int, list[float]] = {}
             if r.boxes is not None and r.boxes.id is not None:
                 boxes = r.boxes.xyxy.cpu().numpy()
                 ids = r.boxes.id.int().cpu().tolist()
@@ -87,6 +89,8 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
                 # Box centre and width (pixels), for motion rules applied after the run.
                 geo = {i: [round(float((b[0] + b[2]) / 2), 1), round(float((b[1] + b[3]) / 2), 1),
                            round(float(b[2] - b[0]), 1)] for i, b in zip(ids, boxes, strict=True)}
+                # Lit red and blue share of the box, for the flashing-light rule (lights.py).
+                lit = {i: [round(v, 4) for v in lit_fractions(image, b)] for i, b in zip(ids, boxes, strict=True)}
                 if args.tta:
                     # Test-time augmentation: average with the mirrored crop. The unflipped
                     # scores are kept too, so one run gives both results.
@@ -110,9 +114,10 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
             frames.append(probs)
             raw_frames.append(raw)
             geo_frames.append(geo)
+            light_frames.append(lit)
         index += 1
     capture.release()
-    return times, frames, raw_frames, geo_frames
+    return times, frames, raw_frames, geo_frames, light_frames
 
 
 def alarm_sprt(frames: list[dict], upper: float, clip: float = 2.0, prior: float = 0.5) -> list[bool]:
@@ -293,7 +298,7 @@ def main() -> None:
     runs = {}
     for video in args.videos:
         detector = YOLO(str(args.detector))  # a fresh tracker state per video
-        times, frames, raw_frames, geo_frames = run_video(video, detector, classifier, amb, one_stage, args)
+        times, frames, raw_frames, geo_frames, light_frames = run_video(video, detector, classifier, amb, one_stage, args)
         capture = cv2.VideoCapture(str(video))
         fps = capture.get(cv2.CAP_PROP_FPS) or 25.0
         capture.release()
@@ -301,6 +306,7 @@ def main() -> None:
         runs[video.stem] = {"times": times, "frames": [{str(k): round(v, 4) for k, v in f.items()} for f in frames],
                             "frames_no_tta": [{str(k): round(v, 4) for k, v in f.items()} for f in raw_frames],
                             "boxes": [{str(k): v for k, v in g.items()} for g in geo_frames],
+                            "lights": [{str(k): v for k, v in g.items()} for g in light_frames],
                             "with_ambulance": labelled[0], "without": labelled[1]}
         if args.intervals:
             spec = json.loads(args.intervals.read_text(encoding="utf-8"))["videos"][video.stem]
