@@ -244,7 +244,8 @@ Thresholds: on labelled ambulance boxes, S >= 120 / V >= 200 found lit pixels in
 0-46 % of boxes per clip (beacon cores are nearly white in compressed video); S >= 80 /
 V >= 160 is used. Open question for the team: making the light a requirement (strict
 1.01) changes FR-06 scope from "ambulance" to "ambulance on duty", so it is reported
-but not chosen without the team.
+but not chosen without the team. Decision (Eren, 22.11.2026): light lowers the bar, it is not
+required; only strict 0.7 / 0.8 can be chosen, 1.01 is reported for reference.
 
 Next if these are not enough: hard negatives of Turkish white minibuses and panel vans
 from new footage (not İzmir or Sariyer, which stay for measuring), as the site-negative
