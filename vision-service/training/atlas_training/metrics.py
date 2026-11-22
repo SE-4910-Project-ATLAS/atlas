@@ -47,6 +47,33 @@ class Scores:
         return dict(self.__dict__)
 
 
+def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95 % Wilson score interval of a proportion; better than the normal approximation
+    for the small counts of our clip-level tests (e.g. 7 of 8 videos)."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = successes / n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / (1 + z * z / n)
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def false_alarm_upper_bound(alarms: int, hours: float) -> float:
+    """95 % upper bound on false alarms per hour (Poisson). For zero alarms this is the
+    'rule of three': 3 / hours."""
+    from math import exp, factorial
+
+    if hours <= 0:
+        return float("inf")
+    # Smallest rate m with P(X <= alarms | m) <= 0.05, by bisection.
+    lo, hi = 0.0, 10.0 * (alarms + 3)
+    for _ in range(100):
+        m = (lo + hi) / 2
+        cdf = sum(exp(-m) * m**k / factorial(k) for k in range(alarms + 1))
+        lo, hi = (m, hi) if cdf > 0.05 else (lo, m)
+    return hi / hours
+
+
 def box_iou(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """IoU matrix (len(a), len(b)) for boxes in (x1, y1, x2, y2) form."""
     a = np.asarray(a, dtype=float).reshape(-1, 4)

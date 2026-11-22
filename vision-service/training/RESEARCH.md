@@ -143,6 +143,16 @@ are not over-counted. It sits between the two mean thresholds: one passage less 
 mean >= 0.5 for four false alarms less. With 16 passages a difference of one is within
 noise, so the rule is chosen again with the next classifier, on this set only.
 
+## False alarms on the İzmir square camera (classifier v5e, 22.11.2026)
+
+2.5 h of daytime footage at 5 frames/s (45,001 frames), >= 5 frames, mean >= 0.5:
+3 alarm spans, all checked by eye and all false (a distant white van, a parked white
+van behind a tree next to a turquoise car). That is 1.2 per hour, 95 % upper bound
+3.1 per hour; NFR-05 asks for at most 0.125 per hour (1 per 8 h). The spans are short
+(0-4.4 s). Proving 0.125 per hour with zero alarms would need 24 h of footage (rule of
+three), so NFR-05 cannot be shown with the footage we have even at zero alarms; the
+report gives the measured rate and its bound.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar

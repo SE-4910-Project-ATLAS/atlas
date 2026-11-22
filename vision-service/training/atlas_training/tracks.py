@@ -81,6 +81,11 @@ def run_video(video: Path, detector, classifier, amb: int, one_stage, args) -> t
                 ids = r.boxes.id.int().cpu().tolist()
                 crops = [cv2.resize(square_crop(image, b, args.pad), (args.size, args.size)) for b in boxes]
                 ps = [c.probs.data[amb].item() for c in classifier.predict(crops, imgsz=args.size, verbose=False)]
+                if args.tta:
+                    # Test-time augmentation: average with the mirrored crop.
+                    flipped = [c.probs.data[amb].item() for c in
+                               classifier.predict([cv2.flip(x, 1) for x in crops], imgsz=args.size, verbose=False)]
+                    ps = [(a + b) / 2 for a, b in zip(ps, flipped, strict=True)]
                 if one_stage is not None:
                     model, idx, size = one_stage
                     o = model.predict(image, conf=0.25, classes=[idx], imgsz=size, verbose=False)[0]
@@ -147,6 +152,7 @@ def main() -> None:
     parser.add_argument("--size", type=int, default=224)
     parser.add_argument("--stride", type=int, default=2, help="read every n-th frame (ignored with --target-fps)")
     parser.add_argument("--target-fps", type=float, help="read about this many frames per second, e.g. 5 (NFR-02)")
+    parser.add_argument("--tta", action="store_true", help="average the classifier score with the mirrored crop")
     parser.add_argument("--candidate-fps", type=float, help="rate while a candidate is seen, e.g. 12.5")
     parser.add_argument("--candidate-p", type=float, default=0.3, help="track score that makes a candidate")
     parser.add_argument("--candidate-hold", type=float, default=3.0, help="seconds the faster rate is kept")

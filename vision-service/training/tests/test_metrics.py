@@ -74,3 +74,18 @@ def test_best_f1_threshold_drops_low_confidence_false_alarms():
     best = best_f1_threshold(images)
     assert best.conf == pytest.approx(0.9)
     assert (best.precision, best.recall) == (1.0, 1.0)
+
+
+def test_wilson_interval_small_counts():
+    from atlas_training.metrics import wilson_interval
+
+    lo, hi = wilson_interval(7, 8)
+    assert 0.50 < lo < 0.55 and 0.97 < hi < 0.99
+    assert wilson_interval(0, 0) == (0.0, 1.0)
+
+
+def test_false_alarm_upper_bound_rule_of_three():
+    from atlas_training.metrics import false_alarm_upper_bound
+
+    assert abs(false_alarm_upper_bound(0, 5.0) - 3.0 / 5.0) < 0.01
+    assert 4.7 / 5 < false_alarm_upper_bound(1, 5.0) < 4.8 / 5
