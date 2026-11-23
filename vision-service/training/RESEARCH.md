@@ -311,6 +311,24 @@ gamma-and-noise copies do not. The smallest ambulances hardly improve: only 16 o
 boxed by the detector, and at 40-64 px there is little left to see. v5g goes on to the
 clip-level runs on the development set and Sariyer (false alarms).
 
+Clip level, v5g (development set and Sariyer only; chosen before test2 and İzmir):
+
+| rule | dev passages | dev clips | dev ambulance-free clips with alarm | Sariyer alarms (53 min) |
+| --- | --- | --- | --- | --- |
+| v5e mean 0.5 | 13/16 | 6/7 | 0/2 | 44 |
+| v5e once per place 0.5 | 13/16 | 6/7 | 0/2 | 5 |
+| v5g mean 0.5 | 14/16 | 6/7 | 1/2 | 12 |
+| v5g mean 0.6 | 14/16 | 6/7 | 0/2 | 1 |
+| **v5g mean 0.7** | **14/16** | **6/7** | **0/2** | **0** |
+
+v5g scores real ambulances higher, so a stricter threshold costs no development passage
+and removes the parked vehicles. Most of v5g's "false" development spans at 0.5 are real
+ambulances in unlabelled frames (CnPH crash scene, PGcW, D7UW, checked on the frames);
+the real ones are an overturned white van (6E7c, Çorum MOBESE) and a bus (QiYl).
+**Chosen: v5g, mean >= 0.7 over >= 5 frames, once per place (radius 0.5, 30 min).**
+At 0.7 the place rule changes nothing here; it is kept for parked vehicles on other cameras.
+Caveat: 0 alarms in 0.88 h only bounds the rate at 3.4/h (rule of three).
+
 False alarms on İzmir day with the adaptive read rate (light run, v5e): 10 in 2.5 h
 (4.0/h) with the frame rule, 9 with once per place; the fixed 5 frames/s run had 3. These
 are moving vehicles, so the place rule cannot help; the cause is probably that reading at
