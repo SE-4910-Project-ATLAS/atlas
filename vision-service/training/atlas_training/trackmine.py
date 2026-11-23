@@ -115,6 +115,7 @@ def main() -> None:
     classifier = YOLO(str(args.classifier))
     amb = class_index(classifier.names, "ambulance")
     summary = []
+    args.out.mkdir(parents=True, exist_ok=True)  # also when no video has a candidate track
     for video in args.videos:
         detector = YOLO(str(args.detector))  # fresh tracker state per video
         tracks = mine_video(video, detector, classifier, amb, args)

@@ -394,6 +394,52 @@ Next (v5i): more Turkish hard negatives from cameras never used for testing (Şe
 as for v5g), aimed at white vans and trucks; compared with v5g on the development set
 and Sarıyer only.
 
+## Classifier v5i and a foundation-model probe (23.11.2026, night)
+
+Hard negatives from new cameras: the two YouTube recordings found as "traffic cameras"
+were not (Şerifali: a black screen with a company slide show; Kadıköy: a pier camera with
+few vehicles), so mining them gave little. The cameras that do show traffic (İzmir,
+Sarıyer) are our test and development cameras and stay out of training.
+
+Public van crops instead: Roboflow `car-lmfdq/van-2s73c` v5 (CC BY 4.0, licence read from
+the Roboflow API), 1,281 van boxes cropped as for the classifier and scored with v5g. A
+public "van" set can hold ambulances, so the 32 crops with p >= 0.3 were looked at: 4 were
+(or could be) ambulances and are excluded (`labeling/van_2s73c_exclude.txt`), 28 are hard
+negatives (white and beige Hiace-type vans, a school bus). Most photos are used-car
+listings outside Turkey, so this teaches the white-van shape, not Turkish streets.
+v5i = v5g + 1,275 van crops in train/other (`atlas_training.addneg`), trained with the v5g
+settings: val top-1 0.980 (v5g 0.976) on the same val crops.
+
+Development set and Sarıyer with the chosen rule (place, mean >= 0.7), as v5g was chosen:
+
+| | v5g | v5i |
+| --- | --- | --- |
+| Passages found (dev) | 14/16 | 13/16 |
+| False spans in labelled dev videos | 13 | 4 |
+| Ambulance-free dev videos with an alarm | 0/2 | 1/2 |
+| Sarıyer alarms in 0.88 h | 0 | 2 |
+
+The new alarms were looked at: two 23–25 px red and blue light blobs at night on
+Sarıyer, and a white minibus partly hidden by a red lorry. v5i finds one passage fewer
+and alarms on Sarıyer, the two criteria v5g was chosen on, so **v5g stays**; the drop in
+false spans on the labelled dev videos is noted but not used to override the criteria
+set in advance. One training run per classifier cannot separate the data change from
+run-to-run noise (the new false alarm is again a white minibus); a fair comparison of
+small data changes needs several seeds per classifier, which is the next step for
+v5i-style additions.
+
+Kadıköy (5 h, pier camera) gave 14 candidate tracks, all one lit white kiosk with a red
+stripe at night; marked `other` in `labeling/trackmine_v4/verdicts.csv` and kept for a
+later set (none of them meets the rule, mean 0.07–0.35).
+
+Frozen DINOv2 features (ViT-S/14, Apache 2.0) with a logistic regression on the same
+v5g train/val crops (`atlas_training.embedprobe`): val accuracy 0.909 (ambulance recall
+0.86), against 0.976 for the fine-tuned YOLO11s-cls. The reported strength of DINOv2
+linear probes on general fine-grained sets (Oquab et al., arXiv 2304.07193) does not carry
+over to ambulance vs white van with our data. The two make partly different errors (83
+and 315, 36 shared), but averaging gives 0.973 and down-weighting v5g by the probe 0.977
+with fewer ambulances found; not worth a second large model per crop. Not used.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
