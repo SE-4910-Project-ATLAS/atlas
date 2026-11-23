@@ -26,6 +26,15 @@ Datasets, weights and run outputs are never committed (see `.gitignore`).
 | `atlas_training/lowres.py` | Adds low-resolution copies of the train crops |
 | `atlas_training/twostage.py` | COCO vehicle detector + crop classifier, scored per frame; fusion with a one-stage model |
 | `atlas_training/tracks.py` | Tracks vehicles, decides per track (mean classifier score) and scores per clip (NFR-04) |
+| `atlas_training/rules.py` | Compares track decision rules on saved runs (mean, time, SPRT, once per place, light) |
+| `atlas_training/lights.py` | Flashing red / blue light evidence per track |
+| `atlas_training/diagnose.py` | Per labelled ambulance: boxed by the detector? classifier score? By size and day / night |
+| `atlas_training/trackmine.py` | Mines classifier crops along vehicle tracks of new videos |
+| `atlas_training/sheets.py` | Contact sheets of mined tracks that still need a verdict |
+| `atlas_training/buildmined.py` | Crop set from checked tracks: preview sheets, exclude list, low-resolution copies |
+| `atlas_training/timesheet.py` | One frame per n seconds of a video, for time-interval test labels |
+| `atlas_training/night.py` | Synthetic night copies of crops (tried, not used: v5h) |
+| `atlas_training/calibrate.py` | Temperature scaling of the classifier (checked: v5e already calibrated) |
 | `RESEARCH.md` | Findings from the literature and our measurements, and the decision taken for each problem |
 
 ## Setup
@@ -147,6 +156,31 @@ python -m atlas_training.tracks path/to/test/clips/*.mp4 --labels datasets/raw/o
 
 Thresholds are chosen on val, not on test.
 
+**Final system (23.11.2026):** COCO YOLO11s vehicles (960 px, conf 0.1) → ByteTrack
+(`configs/tracker_ambulance.yaml`) → classifier `runs/cls/crops_v5g` on 224 px square
+crops → a track is an ambulance when the mean p over at least 5 frames is >= 0.7 →
+alarm once per place (`alarm_once_per_place`, radius 0.5 box widths, 30 min). Frames are
+read at 5/s and at 12.5/s for 3 s while a track scores >= 0.3 (NFR-02). Rule and
+threshold were chosen on the development set and the Sariyer recording only; test2,
+test3 and İzmir were scored once.
+
+### More Turkish crops from new videos (classifier v5g)
+
+```bash
+python -m atlas_training.diagnose datasets/raw/own_cctv-v2/test --classifier runs/cls/crops_v5e/weights/best.pt --out runs/eval/diagnose_dev.csv
+python -m atlas_training.trackmine D:/code/atlas-data/clips/tr3/*.mp4 --classifier runs/cls/crops_v5e/weights/best.pt --candidate-p 0.2 --out D:/code/atlas-data/labeling/trackmine_v1
+python -m atlas_training.sheets D:/code/atlas-data/labeling/trackmine_v1     # mark each track in verdicts.csv
+python -m atlas_training.buildmined datasets/crops_v5e D:/code/atlas-data/labeling/trackmine_v1 --preview D:/code/atlas-data/labeling/trackmine_v1/check
+python -m atlas_training.buildmined datasets/crops_v5e D:/code/atlas-data/labeling/trackmine_v1 D:/code/atlas-data/labeling/trackmine_v2     --exclude D:/code/atlas-data/labeling/trackmine_v1/check/exclude.txt D:/code/atlas-data/labeling/trackmine_v2/check/exclude.txt --max-pos 8 --out datasets/crops_v5g
+yolo classify train data=datasets/crops_v5g model=weights/yolo11s-cls.pt imgsz=224 epochs=30 patience=10 batch=64 seed=42 project=runs/cls name=crops_v5g
+python -m atlas_training.rules runs/eval/tracks/g5g_dev.json runs/eval/tracks/g5g_sariyer.json --cuts runs/eval/tracks/cuts_dev.json --out runs/eval/tracks/rules_v5g.json
+```
+
+Every mined track is looked at and marked ambulance / other / skip, with the time range
+where it is the right vehicle; then every low-scoring positive crop and every negative
+crop is checked tile by tile. Labels propagated along tracks without this check taught
+van false alarms (classifier v5f, rejected).
+
 ## How results stay comparable and reproducible
 
 - **One test set, one scorer.** The pre-trained model has four classes, our model one.
@@ -201,6 +235,11 @@ The licences were taken from the Model & Dataset Research page (12.11.2026).
   scores as a first comparison, not as the NFR-04 verification.
 - The near-copy check compares 32×32 grey thumbnails. It finds the same photo and
   consecutive frames, not the same vehicle filmed from another place.
+
+- Small ambulances (40-64 px wide) are still rarely recognised (6 of 24 development
+  frames with v5g); a third of them are not boxed by the vehicle detector at all.
+- Clip-level tests are Turkish news, security-camera and phone videos, not the pilot
+  cameras; the false-alarm recordings are one İzmir square camera and one Sariyer camera.
 
 ## Updating the lock file
 
