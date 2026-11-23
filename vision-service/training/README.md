@@ -33,6 +33,8 @@ Datasets, weights and run outputs are never committed (see `.gitignore`).
 | `atlas_training/sheets.py` | Contact sheets of mined tracks that still need a verdict |
 | `atlas_training/buildmined.py` | Crop set from checked tracks: preview sheets, exclude list, low-resolution copies |
 | `atlas_training/timesheet.py` | One frame per n seconds of a video, for time-interval test labels |
+| `atlas_training/report.py` | Applies the chosen track rule once to held-out runs; Wilson intervals, false alarms per hour, `--intervals` (audited labels), `--reviewed` (eye-checked camera alarms) |
+| `atlas_training/demo.py` | Demo video of the final system on a clip (boxes, track scores, AMBULANS banner); output stays local |
 | `atlas_training/night.py` | Synthetic night copies of crops (tried, not used: v5h) |
 | `atlas_training/calibrate.py` | Temperature scaling of the classifier (checked: v5e already calibrated) |
 | `RESEARCH.md` | Findings from the literature and our measurements, and the decision taken for each problem |

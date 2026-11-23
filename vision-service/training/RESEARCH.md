@@ -343,6 +343,57 @@ are moving vehicles, so the place rule cannot help; the cause is probably that r
 12.5 frames/s around a candidate makes 5 frames easy to reach (to be checked on Sariyer,
 not on İzmir). The classifier is the real fix, hence v5g.
 
+## Held-out results and an alarm audit (23.11.2026, evening)
+
+Chosen rule (v5g, mean >= 0.7 over >= 5 frames, once per place in 30 min), applied once
+with `atlas_training.report` to test3 (35 videos), and v5e with the same rule as the
+comparison:
+
+| test3, labels as made | v5g | v5e |
+| --- | --- | --- |
+| Ambulance videos found | 24/25 | 22/25 |
+| Passages found | 40/55 | 33/55 |
+| Alarms on a labelled passage | 40/64 | 33/39 |
+| Ambulance-free videos with an alarm | 3/10 | 1/10 |
+
+Every alarm span outside the labels was then looked at, for both classifiers (crops along
+the track and full frames). The one-second sheets had missed real ambulances: a parked
+ambulance (qreCPCILYU0 56–63 s), one behind police officers and one just before a
+labelled passage (xUgTyUAh3jg), and one entering a Sakarya KGYS camera at the frame edge
+in a video labelled ambulance-free (ZwRF38P5K8c 38–41 s). These became positive; a night
+van with a blue beacon right after an ambulance scene (S6AxT_6hQ0w 58–90 s, 12 of v5g's
+spans) could not be told apart from a gendarmerie van and became ignore. The audited
+copy is `clips/test3/labels_audited.json`, scored with `report --intervals`. test2's
+alarms outside the labels were all false (fire-engine detail, advertising truck, a
+monument, a red lorry, an overturned car in a caption, a van at night), so its labels
+stand. Caveat: only alarms can be audited, so the audit can add found passages but never
+missed ones; both label sets are reported.
+
+| test2 + test3 (49 videos), audited | v5g | v5e |
+| --- | --- | --- |
+| Ambulance videos found | 32/34 (94 %, 81–98) | 29/34 (85 %, 70–94) |
+| Passages found | 51/68 | 42/68 |
+| Alarms that are real | 51/61 (84 %, 72–91) | 42/45 (93 %, 82–98) |
+| Ambulance-free videos with an alarm | 5/15 | 2/15 |
+
+v5g trades precision for recall against v5e on held-out data, while it was better on both
+on the development set; the choice stays v5g (chosen before these numbers) and the gap is
+reported. What the remaining false alarms are says where to work: white and red vans and
+trucks, a fire engine, a red and white monument, lights at night.
+
+İzmir (5 h, never used for training or tuning) had an ambulance after all: it crosses
+the square around minutes 119–127 of the day recording. Each alarm was looked at
+(`clips/fa/alarm_review.csv`, `report --reviewed`): v5g 3 spans on the real ambulance and
+2 false (one event, a small blue light at night) = 0.4 false/h (95 % upper bound 1.26/h);
+v5e 1 span on the ambulance (it missed the one at minute 119.5) and 3 false (a white
+panel van, a city bus) = 0.6/h. Target 0.125/h; showing it needs ~24 h with no false
+alarm.
+
+Next (v5i): more Turkish hard negatives from cameras never used for testing (Şerifali–
+Çamlıca and Kadıköy recordings in `clips/hn_new`, mined along tracks and checked by eye
+as for v5g), aimed at white vans and trucks; compared with v5g on the development set
+and Sarıyer only.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
