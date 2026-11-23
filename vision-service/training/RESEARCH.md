@@ -262,6 +262,47 @@ Next if these are not enough: hard negatives of Turkish white minibuses and pane
 from new footage (not İzmir or Sariyer, which stay for measuring), as the site-negative
 mining in the vehicle-detection literature (e.g. US8971581).
 
+## Small and night ambulances; classifier v5g (23.11.2026)
+
+Diagnosis (`atlas_training.diagnose`, development frames, v5e): for each labelled ambulance,
+is it boxed by the COCO detector, and what does the classifier say on its crop?
+
+| group | n | boxed (960 px) | p >= 0.5 on the labelled crop |
+| --- | --- | --- | --- |
+| width 40-64 px | 24 | 16 | 6 |
+| width 64-100 px | 21 | 21 | 12 |
+| night | 33 | 27 | 21 |
+| all | 166 | 146 | 95 |
+
+The classifier, not the detector, loses small and night ambulances. A 1280 px detector
+input boxes fewer (142), and a lower detector confidence (0.03, 0.01) adds 2 night boxes
+but no more correct ones. Only ~3 % of v5e's ambulance crops are dark.
+
+Fix: more real Turkish ambulance crops, mined along vehicle tracks and checked by eye
+(`atlas_training.trackmine`, `sheets`, `buildmined`). Jin et al. (ECCV 2018): the frames a
+tracked object is missed in are the most useful new examples. 54 new Turkish clips
+(`clips/tr3`, local only), searched for night, head-on and top-down views; never used for
+testing. Every candidate track was looked at and marked ambulance / other / skip, with a
+time range where the track jumped to another vehicle (211 ambulance tracks, 40 of them at
+night; 144 other; 124 skipped: studio graphics, picture-in-picture, mixed crops, a foreign
+livery). Then every low-scoring positive crop and every negative crop was checked tile by
+tile (1,253 crops) and 123 were dropped. Dropped on purpose: night crops that show only
+two headlights (they would teach "any car at night"), and plain white vans seen from above
+with no visible marking (they would teach the white-van false alarm).
+Up to 8 crops per track (half the lowest-scoring, half spread), each with a degraded
+low-resolution copy for small ambulances. Ratio ambulance:other kept near 1:3 (v5e
+1:5.9) so the classifier is not pushed towards saying "ambulance".
+v5h: v5g plus synthetic night copies of 30 % of the ambulance crops (`atlas_training.night`:
+gamma, cool cast, noise). Published evidence is for learned day-to-night translation
+(Lin et al., IEEE T-ITS 2021; Yang et al., arXiv 2412.16478), not for gamma and noise, so
+v5h is kept only if it beats v5g on the night frames of the development set.
+
+False alarms on İzmir day with the adaptive read rate (light run, v5e): 10 in 2.5 h
+(4.0/h) with the frame rule, 9 with once per place; the fixed 5 frames/s run had 3. These
+are moving vehicles, so the place rule cannot help; the cause is probably that reading at
+12.5 frames/s around a candidate makes 5 frames easy to reach (to be checked on Sariyer,
+not on İzmir). The classifier is the real fix, hence v5g.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
