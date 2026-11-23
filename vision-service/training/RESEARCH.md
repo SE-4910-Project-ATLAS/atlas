@@ -329,6 +329,14 @@ the real ones are an overturned white van (6E7c, Çorum MOBESE) and a bus (QiYl)
 At 0.7 the place rule changes nothing here; it is kept for parked vehicles on other cameras.
 Caveat: 0 alarms in 0.88 h only bounds the rate at 3.4/h (rule of three).
 
+**Held-out test2, applied once (23.11.2026, v5g, mean >= 0.7, once per place):** passages
+7/9, videos with an ambulance 7/8 (Wilson 53-98 %), ambulance-free videos with an alarm
+3/6, false spans 7. Same as v5e (7/8, 3/6; 4 false spans with once per place). The gain on
+the development set and Sariyer did not carry over to test2; with 8 + 6 videos the
+difference is within noise either way. Reported as is, not re-tuned on test2.
+(Reference only, not chosen: v5g at mean 0.5 finds 8/8 with 4/6.) İzmir day and night
+with v5g were stopped (23.11, 17:50) and are still to run.
+
 False alarms on İzmir day with the adaptive read rate (light run, v5e): 10 in 2.5 h
 (4.0/h) with the frame rule, 9 with once per place; the fixed 5 frames/s run had 3. These
 are moving vehicles, so the place rule cannot help; the cause is probably that reading at
