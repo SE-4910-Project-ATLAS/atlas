@@ -297,6 +297,20 @@ gamma, cool cast, noise). Published evidence is for learned day-to-night transla
 (Lin et al., IEEE T-ITS 2021; Yang et al., arXiv 2412.16478), not for gamma and noise, so
 v5h is kept only if it beats v5g on the night frames of the development set.
 
+Result on the development frames (ambulances boxed by the detector and p >= 0.5):
+
+| group | v5e | v5g | v5h |
+| --- | --- | --- | --- |
+| all (166) | 81 | **104** | 100 |
+| night (33) | 17 | **20** | 16 |
+| width 64-100 px (21) | 12 | **18** | 19 |
+| width 40-64 px (24) | 5 | **6** | 6 |
+
+v5h (synthetic night copies) is rejected: worse at night than v5g. Real night crops help,
+gamma-and-noise copies do not. The smallest ambulances hardly improve: only 16 of 24 are
+boxed by the detector, and at 40-64 px there is little left to see. v5g goes on to the
+clip-level runs on the development set and Sariyer (false alarms).
+
 False alarms on İzmir day with the adaptive read rate (light run, v5e): 10 in 2.5 h
 (4.0/h) with the frame rule, 9 with once per place; the fixed 5 frames/s run had 3. These
 are moving vehicles, so the place rule cannot help; the cause is probably that reading at
