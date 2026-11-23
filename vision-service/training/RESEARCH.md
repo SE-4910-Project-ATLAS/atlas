@@ -428,6 +428,22 @@ run-to-run noise (the new false alarm is again a white minibus); a fair comparis
 small data changes needs several seeds per classifier, which is the next step for
 v5i-style additions.
 
+Second seed (seed 1, same data and settings, 24.11.2026), chosen rule:
+
+| | Passages | Ambulance-free dev videos with an alarm | False spans (dev) | Sarıyer alarms |
+| --- | --- | --- | --- | --- |
+| v5g seed 42 (final) | 14/16 | 0/2 | 13 | 0 |
+| v5g seed 1 | 14/16 | 1/2 | 15 | 2 |
+| v5i seed 42 | 13/16 | 1/2 | 4 | 2 |
+| v5i seed 1 | 12/16 | 1/2 | 10 | 7 |
+
+v5i finds fewer passages with both seeds, so the van crops cost recall; that holds. The
+false-alarm counts move a lot between seeds of the same data (v5g: 0 or 2 on Sarıyer),
+so the zero Sarıyer alarms of the final v5g were partly luck of the training run, and the
+development false-alarm numbers carry about ±2 alarms of run-to-run noise. Val top-1:
+v5g 0.976 / 0.975, v5i 0.980 / 0.977. v5g stays; future data changes are compared over at
+least two seeds.
+
 Kadıköy (5 h, pier camera) gave 14 candidate tracks, all one lit white kiosk with a red
 stripe at night; marked `other` in `labeling/trackmine_v4/verdicts.csv` and kept for a
 later set (none of them meets the rule, mean 0.07–0.35).
