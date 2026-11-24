@@ -475,8 +475,11 @@ Searched five questions tied to our weak points and read the key papers in full:
   source, so it does not promise better small ambulances.
 - **Higher input resolution for fine-grained classes.** FungiTastic (arXiv 2408.13632)
   reports about +5 points from 224 to 384 for almost all architectures; Cui et al.
-  (arXiv 1806.06193) large gains from 299 to 560 on iNat. A training-resolution
-  experiment (v5g at 288 or 320) is the open item from this pass; it needs two seeds.
+  (arXiv 1806.06193) large gains from 299 to 560 on iNat. Not testable cheaply here: the
+  crop sets are stored at 224 px and the mined crops cannot be cut again without
+  re-running the mining, so training at 288 or 320 would only upsample the same pixels.
+  If the crop pipeline is rebuilt, store crops at 320 px; most ambulances that fail are
+  smaller than 224 px anyway, where this gain cannot apply.
 - **Low-resolution vehicles.** Tas et al. (Sensors 2022) and arXiv 2309.16390 train on or
   distil to low-resolution vehicle images; together with Peng et al. (1605.06695) this
   supports our degraded low-resolution copies rather than super-resolution.
