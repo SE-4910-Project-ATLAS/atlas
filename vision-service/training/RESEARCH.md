@@ -456,6 +456,50 @@ over to ambulance vs white van with our data. The two make partly different erro
 and 315, 36 shared), but averaging gives 0.973 and down-weighting v5g by the probe 0.977
 with fewer ambulances found; not worth a second large model per crop. Not used.
 
+## Literature pass and two cheap tests (24.11.2026)
+
+Searched five questions tied to our weak points and read the key papers in full:
+
+- **Track-level classification.** Hwang et al., "Cannot See the Forest for the Trees"
+  (CVPR 2022, arXiv 2206.02116) classify a whole tracklet with a transformer over its
+  RoI tokens (3 encoder layers, 8 heads). Gains are over QDTrack's own per-frame classes
+  (TAO val TrackAP50 15.8 → 19.9; YouTube-VIS 34.4 → 37.7 AP), not over plain score
+  averaging, and it is trained end to end with the tracker on video tracklets (sparse
+  video labels alone: 6.5 TrackAP50). Not usable with our data now; our mean over the
+  track stays.
+- **Train/test resolution.** Touvron et al., FixRes (NeurIPS 2019, arXiv 1906.06423):
+  random-resized-crop training makes objects look larger in training than at test
+  (E[r_test/r_train] ≈ 0.80); a ResNet-50 trained at 224 scores 77.0 / 78.0 / 78.4 / 78.3
+  at test 224 / 256 / 288 / 320, and 79.1 at 384 after fine-tuning the last layers at the
+  test resolution. The paper is about scale statistics, not about pixels lost at the
+  source, so it does not promise better small ambulances.
+- **Higher input resolution for fine-grained classes.** FungiTastic (arXiv 2408.13632)
+  reports about +5 points from 224 to 384 for almost all architectures; Cui et al.
+  (arXiv 1806.06193) large gains from 299 to 560 on iNat. A training-resolution
+  experiment (v5g at 288 or 320) is the open item from this pass; it needs two seeds.
+- **Low-resolution vehicles.** Tas et al. (Sensors 2022) and arXiv 2309.16390 train on or
+  distil to low-resolution vehicle images; together with Peng et al. (1605.06695) this
+  supports our degraded low-resolution copies rather than super-resolution.
+- **False positives on fixed cameras.** Training-free background embedding (BEM, arXiv
+  2604.11714), empty-scene negatives (US8385632), per-region thresholds (US12682481),
+  adversarial masks for repeat false detections (US11978247 / US12387480), per-location
+  classifiers (Roth et al., CVPR 2009) and tracking-based adaptation (Spinello et al.,
+  > 50 % fewer false positives on RGB-D). Our once-per-place memory is the cheapest of
+  these; per-camera negatives from empty footage are the next step once a real camera
+  (İZUM) is available.
+- **Emergency-vehicle literature.** Little CCTV work: most papers use web images, aerial
+  views (arXiv 2412.05394) or the beacon alone (ABLDataset, arXiv 2603.05058); sound
+  fusion is reported to cut vision false alarms (ETASR 2026, "False Positive Reduction
+  in Emergency Vehicle Detection Using a Multimodal Edge-Based System"). The MDPI 2024
+  GAN paper (Vehicles 6(3), 53) could not be read (HTTP 403) and is not cited for content.
+
+Two tests that need no training, on the development set and Sarıyer only:
+
+| Test | Result | Decision |
+| --- | --- | --- |
+| v5g at test size 192 / 224 / 256 / 288 / 320 (val crops, FixRes idea) | accuracy 0.974 / 0.976 / 0.976 / 0.976 / 0.970; ambulance recall falls 0.85 → 0.76 as size grows, other recall rises 0.991 → 0.996 | No gain, it acts like a stricter threshold; stay at 224 |
+| Track mean weighted by box width (weight min(1, max(0.25, w/96))) | v5g seed 42: false spans 13 → 12, passages and Sarıyer unchanged; seed 1: Sarıyer 2 → 1 | Within run-to-run noise; not used |
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
