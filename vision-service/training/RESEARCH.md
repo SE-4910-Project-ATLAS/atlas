@@ -503,6 +503,41 @@ Two tests that need no training, on the development set and Sarıyer only:
 | v5g at test size 192 / 224 / 256 / 288 / 320 (val crops, FixRes idea) | accuracy 0.974 / 0.976 / 0.976 / 0.976 / 0.970; ambulance recall falls 0.85 → 0.76 as size grows, other recall rises 0.991 → 0.996 | No gain, it acts like a stricter threshold; stay at 224 |
 | Track mean weighted by box width (weight min(1, max(0.25, w/96))) | v5g seed 42: false spans 13 → 12, passages and Sarıyer unchanged; seed 1: Sarıyer 2 → 1 | Within run-to-run noise; not used |
 
+## A benchmark that can tell classifiers apart (24.11.2026)
+
+Counting alarms on the development videos cannot separate two classifiers: two training
+runs of the same data differ by ±2 alarms. So a fixed set of hard tracks was built from
+the development videos and Sarıyer only (test sets untouched): `atlas_training.trackmine`
+with v5g at candidate p >= 0.1 proposed 205 tracks; each was looked at and marked
+ambulance (28), other (123: white vans and minibuses, buses, a fire engine, a police car,
+billboards, a road sign, night tail lights) or skip (54: the track jumped between
+vehicles, overturned ambulances, unclear night scenes). Data:
+`labeling/bench_v1{,_sariyer}/verdicts.csv`. `atlas_training.bench` scores every crop
+offline (40 s for five classifiers, at most 60 crops per track spread evenly), applies
+the track rule (mean >= 0.7 over >= 5 crops) and bootstraps over tracks, paired between
+classifiers (* = 95 % interval of the difference excludes 0):
+
+| Classifier | False-alarm tracks (of 123) | Ambulance tracks raised (of 28) | FP crops | Recall crops |
+| --- | --- | --- | --- | --- |
+| v5e | 0.024 | 0.571 | 0.145 | 0.730 |
+| v5g (final) | 0.008 | 0.786 | 0.051 | 0.942 |
+| v5g seed 1 | 0.016 | 0.786 | 0.043 | 0.916 |
+| v5i | 0.008 | 0.786 | 0.058 | 0.916 |
+| v5i seed 1 | 0.041 | 0.714 | 0.055 | 0.926 |
+
+- v5g vs v5e: +0.214 ambulance tracks [+0.07, +0.36] *, FP crops −0.095 [−0.16, −0.04] *,
+  recall crops +0.21 *. The mined crops (v5g) are a real gain, now shown with an interval.
+- v5g vs its second seed and vs v5i: no clear difference on any measure except v5i's
+  recall crops (−0.027 [−0.055, −0.006] *), which agrees with the development videos
+  (fewer passages). v5i seed 1 raises more false-alarm tracks than v5g (+0.033 *).
+- So the earlier conclusions hold, now with intervals: v5g stays; v5i is not better.
+
+Limits: the tracks were proposed by v5g, so the set holds more of v5g's mistakes than of
+another classifier's (it is harder on v5g, and v5g's ambulance tracks all reached
+p >= 0.1 somewhere); 28 ambulance tracks give intervals of about ±0.15 on track recall.
+Crop-level rates are the more sensitive measure for small changes. To grow the set,
+mine new development footage with several classifiers and keep the union.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
