@@ -53,3 +53,13 @@ def test_load_tracks_keeps_at_most_max_crops_spread_over_the_track(tmp_path):
     (root / "verdicts.csv").write_text("video,track,verdict,from_s,until_s,note\nv,1,other,,,\n", encoding="utf-8")
     files = load_tracks([root], max_crops=10)[0]["files"]
     assert len(files) == 10 and files[0].name.startswith("00000.00") and files[-1].name.startswith("00099.00")
+
+
+def test_score_spec_averages_ensemble_members(monkeypatch):
+    import atlas_training.bench as bench
+
+    fake = {"a.pt": {"t": np.array([0.2, 0.4])}, "b.pt": {"t": np.array([0.6, 0.8])}}
+    monkeypatch.setattr(bench, "score", lambda tracks, w, flip=False: fake[str(w)])
+    cache = {}
+    out = bench.score_spec([], "a.pt+b.pt", cache)
+    assert np.allclose(out["t"], [0.4, 0.6]) and len(cache) == 2

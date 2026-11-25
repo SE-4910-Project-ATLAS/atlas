@@ -104,7 +104,8 @@ def bootstrap(tracks: list[dict], all_probs: dict[str, dict[str, np.ndarray]], m
     return out
 
 
-def score(tracks: list[dict], weights: Path, batch: int = 128) -> dict[str, np.ndarray]:
+def score(tracks: list[dict], weights: Path, batch: int = 128, flip: bool = False) -> dict[str, np.ndarray]:
+    """p(ambulance) for every crop; with flip, the mean of the crop and its mirror image."""
     from ultralytics import YOLO
 
     from .evaluate import class_index
@@ -114,7 +115,14 @@ def score(tracks: list[dict], weights: Path, batch: int = 128) -> dict[str, np.n
     files = [f for t in tracks for f in t["files"]]
     ps = []
     for i in range(0, len(files), batch):
-        ps += [r.probs.data[amb].item() for r in model.predict([str(f) for f in files[i:i + batch]], imgsz=224, verbose=False)]
+        chunk = [str(f) for f in files[i:i + batch]]
+        p = np.array([r.probs.data[amb].item() for r in model.predict(chunk, imgsz=224, verbose=False)])
+        if flip:
+            import cv2
+
+            mirrored = [cv2.flip(cv2.imread(f), 1) for f in chunk]
+            p = (p + np.array([r.probs.data[amb].item() for r in model.predict(mirrored, imgsz=224, verbose=False)])) / 2
+        ps += p.tolist()
     out, k = {}, 0
     for t in tracks:
         out[t["id"]] = np.array(ps[k:k + len(t["files"])])
@@ -122,10 +130,24 @@ def score(tracks: list[dict], weights: Path, batch: int = 128) -> dict[str, np.n
     return out
 
 
+def score_spec(tracks: list[dict], spec: str, cache: dict) -> dict[str, np.ndarray]:
+    """Scores for a classifier spec: `a.pt`, `a.pt+b.pt` (mean of the members' p) and an
+    optional `@flip` suffix (mirror-image test-time augmentation for every member)."""
+    flip = spec.endswith("@flip")
+    members = spec.removesuffix("@flip").split("+")
+    runs = []
+    for w in members:
+        key = (w, flip)
+        if key not in cache:
+            cache[key] = score(tracks, Path(w), flip=flip)
+        runs.append(cache[key])
+    return {t: np.mean([r[t] for r in runs], axis=0) for t in runs[0]}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("roots", type=Path, nargs="+", help="trackmine folders with a checked verdicts.csv")
-    parser.add_argument("--classifiers", nargs="+", required=True, help="name=weights.pt")
+    parser.add_argument("--classifiers", nargs="+", required=True, help="name=weights.pt, name=a.pt+b.pt (ensemble), name=a.pt@flip (mirror TTA)")
     parser.add_argument("--min-frames", type=int, default=5)
     parser.add_argument("--threshold", type=float, default=0.7)
     parser.add_argument("--bootstrap", type=int, default=2000)
@@ -137,10 +159,10 @@ def main() -> None:
     counts = {lab: sum(t["label"] == lab for t in tracks) for lab in ("ambulance", "other")}
     crops = sum(len(t["files"]) for t in tracks)
     print(f"{len(tracks)} tracks ({counts}), {crops} crops")
-    all_probs = {}
+    all_probs, cache = {}, {}
     for item in args.classifiers:
-        name, weights = item.split("=", 1)
-        all_probs[name] = score(tracks, Path(weights))
+        name, spec = item.split("=", 1)
+        all_probs[name] = score_spec(tracks, spec, cache)
     result = bootstrap(tracks, all_probs, args.min_frames, args.threshold, args.bootstrap)
     result.update({"tracks": counts, "crops": crops, "min_frames": args.min_frames, "threshold": args.threshold,
                    "roots": [str(r) for r in args.roots]})
