@@ -36,6 +36,7 @@ Datasets, weights and run outputs are never committed (see `.gitignore`).
 | `atlas_training/report.py` | Applies the chosen track rule once to held-out runs; Wilson intervals, false alarms per hour, `--intervals` (audited labels), `--reviewed` (eye-checked camera alarms) |
 | `atlas_training/demo.py` | Demo video of the final system on a clip (boxes, track scores, AMBULANS banner); output stays local |
 | `atlas_training/bench.py` | Compares classifiers on the eye-checked hard-track set (dev + Sarıyer), with paired bootstrap intervals; use it before any dev-video run |
+| `atlas_training/leakcheck.py` | Leakage check before new videos are used: DINOv2 frame similarity against the test videos, channel graphics left out |
 | `atlas_training/addneg.py` | Adds checked negative crops (e.g. a public van set, ambulances excluded) to a copy of a crop set |
 | `atlas_training/embedprobe.py` | Experiment: linear probe on frozen DINOv2 / timm features of the crops (tried, not used) |
 | `atlas_training/night.py` | Synthetic night copies of crops (tried, not used: v5h) |
