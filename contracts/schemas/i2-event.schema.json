@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SE-4910-Project-ATLAS/atlas/contracts/schemas/i2-event.schema.json",
+  "title": "I2 Event",
+  "description": "Event sent by the vision service: an emergency vehicle with active beacons, a stalled vehicle or an accident. Written to the Redis stream atlas:events (System Architecture, I2); in deployment Option B the same message is sent with POST /events. One event per tracked vehicle: the same event_id is used while the vehicle stays in view.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+    "event_id": {
+      "$ref": "common.schema.json#/$defs/uuid",
+      "description": "Id of the event. Stays the same for the same tracked vehicle, so that repeated messages do not raise new alerts (D3)."
+    },
+    "track_id": {
+      "description": "Id of the vehicle track in the vision service (stage S1). Needed for the next-camera match (FR-13, NFR-19).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "type": { "$ref": "common.schema.json#/$defs/event_type" },
+    "vehicle_type": {
+      "description": "Type of emergency vehicle (FR-08). null for stalled vehicles and accidents.",
+      "anyOf": [{ "$ref": "common.schema.json#/$defs/vehicle_type" }, { "type": "null" }]
+    },
+    "camera_id": { "$ref": "common.schema.json#/$defs/camera_id" },
+    "ts": {
+      "$ref": "common.schema.json#/$defs/utc_timestamp",
+      "description": "UTC time of the camera frame that confirmed the event (technical meeting of 21.11.2026). Not the time the message was sent."
+    },
+    "speed": {
+      "description": "Estimated speed of the vehicle in km/h (FR-05). null if it could not be estimated.",
+      "type": ["number", "null"],
+      "minimum": 0
+    },
+    "direction": {
+      "description": "Direction of travel in degrees, clockwise from north (0 = north, 90 = east), estimated with the camera homography (FR-05). null if unknown.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "exclusiveMaximum": 360
+    },
+    "beacon_confidence": {
+      "description": "Confidence that the beacons are active, from 0 to 1 (FR-07, FR-08). null for stalled vehicles and accidents.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "lanes": {
+      "$ref": "common.schema.json#/$defs/lanes",
+      "description": "Lanes affected by a stalled vehicle or an accident (FR-11, FR-12). Empty for an emergency vehicle."
+    },
+    "snapshot_id": {
+      "$ref": "common.schema.json#/$defs/uuid",
+      "description": "Id of the blurred snapshot stored for the event (FR-08, FR-42)."
+    }
+  },
+  "required": [
+    "schema_version", "event_id", "track_id", "type", "vehicle_type", "camera_id", "ts",
+    "speed", "direction", "beacon_confidence", "lanes", "snapshot_id"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "emergency_vehicle" } } },
+      "then": {
+        "properties": {
+          "vehicle_type": { "$ref": "common.schema.json#/$defs/vehicle_type" },
+          "beacon_confidence": { "type": "number" }
+        }
+      },
+      "else": {
+        "properties": {
+          "vehicle_type": { "type": "null" },
+          "beacon_confidence": { "type": "null" },
+          "lanes": { "minItems": 1 }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SE-4910-Project-ATLAS/atlas/contracts/schemas/i3-camera-status.schema.json",
+  "title": "I3 Camera status",
+  "description": "Status of a camera stream, sent by the vision service when a stream stops or comes back (FR-02, NFR-03). Written to the Redis stream atlas:camera-status (System Architecture, I3). The 'alert' state of FR-02 is not sent here: the backend derives it from the events of the camera.",
+  "type": "object",
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+    "camera_id": { "$ref": "common.schema.json#/$defs/camera_id" },
+    "status": {
+      "description": "online: frames are arriving; offline: the stream stopped and the reader is trying to reconnect.",
+      "enum": ["online", "offline"]
+    },
+    "ts": {
+      "$ref": "common.schema.json#/$defs/utc_timestamp",
+      "description": "UTC time at which the status changed."
+    }
+  },
+  "required": ["schema_version", "camera_id", "status", "ts"],
+  "additionalProperties": false
+}
