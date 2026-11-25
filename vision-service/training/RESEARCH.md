@@ -572,6 +572,31 @@ crops + 64 hard-negative crops. The bench was grown with seven more development 
 Lesson for the method: one seed per data change is not enough even on the bench; compare
 the mean of two seeds, and prefer a bench proposed by several classifiers.
 
+## Short, confident tracks (25.11.2026, night)
+
+Of the 9 bench ambulance tracks v5g misses with the running-mean rule, 6 have only 3–4
+crops, all at p ≈ 1.0 (brief glimpses, or pieces of a track the tracker broke after a
+glare or an occlusion; seen in a night traffic demo as an ambulance turning orange each
+time it got a new track number). A second path was added to the place rule
+(`alarm_once_per_place(..., short_frames, short_threshold)`, off by default): a track
+with fewer than 5 frames also alarms once it has `short_frames` frames at mean >=
+`short_threshold`. A sliding-window mean was tried as well and was worse at every
+setting (window 5 raises 13 of 188 other tracks at 0.7; windows >= 8 lose recall, as most
+tracks are short).
+
+| Rule (v5g) | Bench ambulance tracks | Bench other tracks | Dev passages | Dev false spans | Sarıyer spans |
+| --- | --- | --- | --- | --- | --- |
+| mean >= 0.7, >= 5 frames (chosen) | 39/48 | 4/188 | 14/16 | 13 | 0 |
+| + >= 3 frames at >= 0.9 | 45/48 | 4/188 | 14/16 | 14 | 0 |
+| + >= 2 frames at >= 0.8 | 45/48 | 5/188 | 14/16 | 17 | 0 |
+
+Not adopted. The gain is per track, not per passage: on the development videos every
+passage the short tracks belong to is already found by a longer track of the same
+ambulance, while each setting adds 0–4 false spans. The bench counts tracks, so it
+overstates rule changes that only help broken tracks; rule changes are judged on
+passages. (A first run of this comparison merged two seeds' runs of the same videos,
+which overwrite each other by video name, and used no shot cuts; it was discarded.)
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar

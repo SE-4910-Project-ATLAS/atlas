@@ -71,3 +71,15 @@ def test_a_track_held_back_at_an_old_place_is_released_when_it_moves():
     assert alarm[5]        # track 1 alarms at a new place
     assert not alarm[11]   # track 2 meets the rule 10 px from that place: held back
     assert alarm[19]       # 26 px away (more than half a box width): released
+
+
+def test_a_short_confident_track_alarms_only_with_the_short_rule():
+    from atlas_training.tracks import alarm_once_per_place
+
+    times = [i * 0.2 for i in range(4)]
+    frames = [{1: 0.99}] * 3 + [{}]
+    boxes = [{1: [100, 100, 50]}] * 3 + [{}]
+    assert not any(alarm_once_per_place(times, frames, boxes, min_frames=5, threshold=0.7))
+    assert alarm_once_per_place(times, frames, boxes, 5, 0.7, short_frames=3, short_threshold=0.9)[2]
+    weak = [{1: 0.8}] * 3 + [{}]          # confident enough for the long rule, not the short one
+    assert not any(alarm_once_per_place(times, weak, boxes, 5, 0.7, short_frames=3, short_threshold=0.9))

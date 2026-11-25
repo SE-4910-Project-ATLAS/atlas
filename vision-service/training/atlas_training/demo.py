@@ -95,11 +95,12 @@ def main() -> None:
                     alarmed.discard(tid)
                 shown.append((box, tid, p, votes.total[tid] / votes.count[tid]))
         canvas = image.copy()
-        alarm_now = False
+        alarm_now, alarm_top = False, height
         for box, tid, p, mean in shown:
             x1, y1, x2, y2 = (int(v) for v in box)
             if tid in alarmed:
                 colour, thick, alarm_now = RED, max(3, int(3 * scale)), True
+                alarm_top = min(alarm_top, y1)
             elif mean >= 0.3:
                 colour, thick = ORANGE, max(2, int(2 * scale))
             else:
@@ -112,8 +113,11 @@ def main() -> None:
             cv2.rectangle(canvas, (x1, max(0, y1 - th - 8)), (x1 + tw + 6, y1), colour, -1)
             cv2.putText(canvas, text, (x1 + 3, y1 - 5), font, 0.5 * scale, WHITE, 1, cv2.LINE_AA)
         if alarm_now:
-            cv2.rectangle(canvas, (0, 0), (width, int(60 * scale)), RED, -1)
-            cv2.putText(canvas, "AMBULANS", (int(20 * scale), int(45 * scale)), font, 1.4 * scale, WHITE,
+            # The banner goes to the bottom when it would cover the ambulance at the top.
+            bh = int(60 * scale)
+            y0 = 0 if alarm_top > bh * 1.3 else height - bh - int(30 * scale)
+            cv2.rectangle(canvas, (0, y0), (width, y0 + bh), RED, -1)
+            cv2.putText(canvas, "AMBULANS", (int(20 * scale), y0 + int(45 * scale)), font, 1.4 * scale, WHITE,
                         max(2, int(3 * scale)), cv2.LINE_AA)
         footer = f"t={index / fps:6.1f}s  araclar={len(shown)}  kural: ort>={args.threshold} & n>={args.min_frames}"
         cv2.putText(canvas, footer, (10, height - 12), font, 0.5 * scale, WHITE, 2, cv2.LINE_AA)

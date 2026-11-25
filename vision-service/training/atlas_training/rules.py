@@ -35,6 +35,9 @@ RULES: list[tuple[str, dict]] = (
     + [("time", {"seconds": s, "threshold": t}) for s in (0.5, 1.0, 2.0) for t in (0.5, 0.6)]
     + [("sprt", {"upper": u}) for u in (3.0, 5.0)]
     + [("place", {"n": 5, "threshold": t, "radius": 0.5, "window": w}) for t in (0.5, 0.6) for w in (600.0, 1800.0)]
+    + [("place", {"n": 5, "threshold": 0.7, "radius": 0.5, "window": 1800.0})]
+    + [("place", {"n": 5, "threshold": 0.7, "radius": 0.5, "window": 1800.0, "short_n": n, "short_t": t})
+       for n in (2, 3, 4) for t in (0.8, 0.9, 0.95)]
     + [("lights", {"n": 5, "threshold": 0.5, "strict": s, "min_flicker": f})
        for s in (0.7, 0.8, 1.01) for f in (0.003, 0.01, 0.03)]
     + [("place_lights", {"n": 5, "threshold": 0.5, "radius": 0.5, "window": 1800.0, "strict": s,
@@ -53,7 +56,8 @@ def decide(rule: str, params: dict, times: list[float], frames: list[dict], boxe
         return alarm_sprt(frames, params["upper"])
     if rule == "place":
         return alarm_once_per_place(times, frames, boxes, params["n"], params["threshold"],
-                                    params["radius"], params["window"])
+                                    params["radius"], params["window"], short_frames=params.get("short_n"),
+                                    short_threshold=params.get("short_t", 1.01))
     if rule == "place_lights":
         return alarm_once_per_place(times, frames, boxes, params["n"], params["threshold"], params["radius"],
                                     params["window"], lights, params["strict"], params["min_flicker"])

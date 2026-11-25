@@ -200,7 +200,8 @@ def only_moving(frames: list[dict], boxes: list[dict], min_move: float) -> list[
 def alarm_once_per_place(times: list[float], frames: list[dict], boxes: list[dict], min_frames: int,
                          threshold: float, radius: float = 0.5, window: float = 1800.0,
                          lights: list[dict] | None = None, strict: float | None = None,
-                         min_flicker: float = 0.0) -> list[bool]:
+                         min_flicker: float = 0.0, short_frames: int | None = None,
+                         short_threshold: float = 1.01) -> list[bool]:
     """The mean rule, but a place alarms once: a track that meets the rule where an earlier
     alarm was raised (centre within `radius` box widths, similar width) in the last
     `window` seconds is held back while it stays there, and released once it moves away.
@@ -212,7 +213,11 @@ def alarm_once_per_place(times: list[float], frames: list[dict], boxes: list[dic
     to places this run has alarmed at, with no training.
 
     With `lights` and `strict`, a track that has not flashed red/blue (atlas_training.lights)
-    needs mean >= `strict` instead of `threshold`."""
+    needs mean >= `strict` instead of `threshold`.
+
+    With `short_frames`, a track seen for fewer than `min_frames` frames also counts once
+    it has `short_frames` frames with mean >= `short_threshold` (a short, confident track:
+    an ambulance glimpsed briefly, or a track the tracker broke into pieces)."""
     from .lights import Flashes
 
     flashes = Flashes(min_flicker) if lights is not None and strict is not None else None
@@ -230,7 +235,8 @@ def alarm_once_per_place(times: list[float], frames: list[dict], boxes: list[dic
                 lit = lights[i]
                 if not flashes.update(track_id, t, lit.get(track_id) or lit.get(str(track_id))):
                     need = strict
-            if not votes.is_ambulance(track_id, min_frames, need):
+            if not (votes.is_ambulance(track_id, min_frames, need)
+                    or (short_frames and votes.is_ambulance(track_id, short_frames, max(need, short_threshold)))):
                 continue
             box = frame.get(track_id) or frame.get(str(track_id))
             if box is None:
