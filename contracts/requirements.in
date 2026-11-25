@@ -1,0 +1,5 @@
+# Direct dependencies of the schema tests (tests/test_examples.py).
+# requirements.txt is the lock file generated from this list
+# (see the "Updating dependencies" section of the root README).
+jsonschema==4.26.0
+pytest==9.2.0

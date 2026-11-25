@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "msg": "camera_status",
+  "camera_id": "ibb-003",
+  "status": "online",
+  "ts": "2026-11-26T10:17:48.000Z"
+}
