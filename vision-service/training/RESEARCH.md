@@ -538,6 +538,40 @@ p >= 0.1 somewhere); 28 ambulance tracks give intervals of about ±0.15 on track
 Crop-level rates are the more sensitive measure for small changes. To grow the set,
 mine new development footage with several classifiers and keep the union.
 
+## Classifier v5j and a second seed (25.11.2026)
+
+New data: 25 Turkish videos (`clips/tr4`, leakage-checked against test2/test3 with
+`atlas_training.leakcheck`; five dropped), mined with v5g and looked at track by track
+(`labeling/trackmine_v5`: 35 ambulance, 34 other, 32 skip). v5j = v5g + 510 ambulance
+crops + 64 hard-negative crops. The bench was grown with seven more development videos
+(`clips/dev2`, bench only; `labeling/bench_v2`) to 48 ambulance / 188 other tracks.
+
+| Classifier | False-alarm tracks | Ambulance tracks raised | FP crops | Recall crops |
+| --- | --- | --- | --- | --- |
+| v5g (final) | 0.011 | 0.750 | 0.052 | 0.919 |
+| v5g seed 1 | 0.011 | 0.750 | 0.047 | 0.886 |
+| v5j | 0.016 | 0.688 | 0.058 | 0.834 |
+| v5j seed 1 | 0.011 | 0.729 | 0.048 | 0.884 |
+
+- The first v5j run lost recall crops against v5g (−0.086 [−0.18, −0.02] *), mostly on
+  night ambulances. The second seed does not: v5j seed 1 vs v5g seed 1 is −0.001
+  [−0.04, +0.04]. Against v5g (seed 42) both v5j runs are lower, but so is v5g's own
+  second seed (−0.034 [−0.065, 0.000]); the bench tracks were proposed by v5g seed 42,
+  which favours that one run. So the first v5j result was mostly run-to-run noise.
+- v5j is not adopted: over two seeds it is not better than v5g on any measure, and the
+  new data did not buy a measurable gain. v5g stays.
+- The night red-light negatives first suspected as the cause are only one or two of the
+  64. Looking at all 64 found one real label error: a crop where the tracker had jumped
+  from a grey van to an ambulance (track `p2Sx_COlRrI/86`), and two crops of a bus track
+  with a whole ambulance in frame (`/157`). Track-level verdicts can hide such frames;
+  the three crops are now in `trackmine_v5/check/exclude.txt`. v5g scores do not single
+  them out (mined negatives score high by design), so the check stays by eye.
+- A planned ablation (v5k: v5g + the new positives only, `datasets/crops_v5k`) is not
+  trained, since there is no drop left to explain.
+
+Lesson for the method: one seed per data change is not enough even on the bench; compare
+the mean of two seeds, and prefer a bench proposed by several classifiers.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar
