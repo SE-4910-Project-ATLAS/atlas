@@ -1,5 +1,6 @@
 # Starts the whole ATLAS system with one command (D7, NFR-25):
-#   docker compose up --build
+#   docker compose up --build                   development: also reads compose.override.yaml
+#   docker compose -f compose.yaml up --build   demo: only Caddy publishes ports
 # The mobile app is not part of Compose; it runs on a phone or an emulator.
 # Values come from .env (copy .env.example); the defaults below work without it.
 # For the vision service on an NVIDIA GPU, add compose.gpu.yaml (see README).
@@ -11,8 +12,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-atlas}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas}
       POSTGRES_DB: ${POSTGRES_DB:-atlas}
-    ports:
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql
     healthcheck:
@@ -23,8 +22,6 @@ services:
 
   redis:
     image: redis:8.10.3-alpine
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -38,8 +35,6 @@ services:
       REDIS_URL: redis://redis:6379/0
       ROUTING_API_KEY: ${ROUTING_API_KEY:-}
       FCM_CREDENTIALS_FILE: ${FCM_CREDENTIALS_FILE:-}
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -55,8 +50,6 @@ services:
     build: ./vision-service
     environment:
       BACKEND_URL: http://backend:8000
-    ports:
-      - "${VISION_PORT:-8001}:8001"
     depends_on:
       backend:
         condition: service_healthy
@@ -68,8 +61,6 @@ services:
 
   dashboard:
     build: ./dashboard
-    ports:
-      - "${DASHBOARD_PORT:-8080}:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -79,5 +70,30 @@ services:
       timeout: 5s
       retries: 6
 
+  caddy:
+    image: caddy:2.11.9-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
 volumes:
   db-data:
+  caddy-data:   # certificates and the local CA; keep it so browsers trust the same CA
+  caddy-config:

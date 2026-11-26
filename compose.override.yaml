@@ -1,0 +1,27 @@
+# Development ports. Docker Compose reads this file automatically with
+# `docker compose up`, so every service can be reached directly on the host.
+# The demo setup leaves it out and publishes only Caddy:
+#   docker compose -f compose.yaml up --build
+# Giving -f files (for example compose.gpu.yaml) also leaves this file out; add
+# `-f compose.override.yaml` to keep the development ports.
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+
+  backend:
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+
+  vision-service:
+    ports:
+      - "${VISION_PORT:-8001}:8001"
+
+  dashboard:
+    ports:
+      - "${DASHBOARD_PORT:-8080}:80"
