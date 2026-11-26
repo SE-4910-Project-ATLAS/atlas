@@ -24,10 +24,11 @@ on a physical phone use the IP address of the machine that runs Docker Compose.
 The iOS app is built on macOS with Xcode (SR-11).
 
 **Without a local Flutter installation**, the project can be checked and an Android debug
-APK built in Docker. The first run downloads the Flutter SDK into a Docker volume:
+APK built in Docker. The image is pinned to 3.44.0 and only provides the
+Android SDK and build tools; the first run downloads Flutter 3.50.0 into a Docker volume:
 
 ```bash
-docker run --rm -v atlas-flutter-3.50.0:/sdk -v "$PWD:/w" -w /w ghcr.io/cirruslabs/flutter:stable bash -c '
+docker run --rm -v atlas-flutter-3.50.0:/sdk -v "$PWD:/w" -w /w ghcr.io/cirruslabs/flutter:3.44.0 bash -c '
   [ -x /sdk/flutter/bin/flutter ] || curl -sSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.50.0-stable.tar.xz | tar xJ -C /sdk
   git config --global --add safe.directory "*"; export PATH=/sdk/flutter/bin:$PATH
   flutter test && flutter build apk --debug'
