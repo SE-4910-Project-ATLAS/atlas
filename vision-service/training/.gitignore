@@ -4,3 +4,7 @@ datasets/
 weights/
 runs/
 *.part
+
+# Python bytecode
+__pycache__/
+*.pyc
