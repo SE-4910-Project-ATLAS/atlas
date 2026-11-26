@@ -36,3 +36,25 @@ def test_fuse_keeps_one_stage_and_adds_only_confident_new_boxes():
     f = fuse(one, two, min_two=0.95)
     assert f.boxes.tolist() == [[0, 0, 10, 10], [50, 50, 60, 60]]
     assert f.scores.tolist() == [0.9, 0.97]
+
+
+def test_square_crop_matches_padding_the_whole_frame():
+    import cv2
+    import numpy as np
+
+    from atlas_training.crops import square_crop
+
+    rng = np.random.default_rng(0)
+    image = rng.integers(0, 255, (120, 200, 3), dtype=np.uint8)
+
+    def reference(box, pad):
+        x1, y1, x2, y2 = box
+        side = max(x2 - x1, y2 - y1) * (1 + 2 * pad)
+        a, b = int(round((x1 + x2) / 2 - side / 2)), int(round((y1 + y2) / 2 - side / 2))
+        s = max(1, int(round(side)))
+        t, l = max(0, -b), max(0, -a)
+        p = cv2.copyMakeBorder(image, t, max(0, b + s - 120), l, max(0, a + s - 200), cv2.BORDER_REPLICATE)
+        return p[b + t:b + t + s, a + l:a + l + s]
+
+    for box in [(50, 30, 90, 70), (-10, -5, 30, 40), (170, 90, 230, 130), (0, 0, 200, 120), (5, 50, 15, 52)]:
+        assert np.array_equal(square_crop(image, box, 0.2), reference(box, 0.2)), box

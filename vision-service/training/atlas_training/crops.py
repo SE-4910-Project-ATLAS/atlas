@@ -45,8 +45,12 @@ def square_crop(image: np.ndarray, box, pad: float) -> np.ndarray:
     s = max(1, int(round(side)))
     top, left = max(0, -b), max(0, -a)
     bottom, right = max(0, b + s - h), max(0, a + s - w)
-    padded = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_REPLICATE)
-    return padded[b + top:b + top + s, a + left:a + left + s]
+    # Cut the region inside the image first and pad only that, not the whole frame
+    # (padding the full frame per vehicle cost ~1 ms per box on 1080p).
+    inside = image[max(0, b):min(h, b + s), max(0, a):min(w, a + s)]
+    if not (top or bottom or left or right):
+        return inside
+    return cv2.copyMakeBorder(inside, top, bottom, left, right, cv2.BORDER_REPLICATE)
 
 
 def negatives(vehicles: np.ndarray, scores: np.ndarray, ambulances: np.ndarray, max_iou: float = 0.1):
