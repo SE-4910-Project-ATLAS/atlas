@@ -2,16 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SE-4910-Project-ATLAS/atlas/contracts/schemas/i2-event.schema.json",
   "title": "I2 Event",
-  "description": "Event sent by the vision service: an emergency vehicle with active beacons, a stalled vehicle or an accident. Written to the Redis stream atlas:events (System Architecture, I2); in deployment Option B the same message is sent with POST /events. One event per tracked vehicle: the same event_id is used while the vehicle stays in view.",
+  "description": "Event sent by the vision service: an emergency vehicle, a stalled vehicle or an accident. Written to the Redis stream atlas:events (System Architecture, I2); in deployment Option B the same message is sent with POST /events. One event per tracked vehicle: the same event_id is used while the vehicle stays in view.",
   "type": "object",
   "properties": {
     "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
     "event_id": {
       "$ref": "common.schema.json#/$defs/uuid",
-      "description": "Id of the event. Stays the same for the same tracked vehicle, so that repeated messages do not raise new alerts (D3)."
+      "description": "Id of the event. Stays the same for the same track, so that repeated messages do not raise new alerts (D3). A new track_id gets a new event_id; repeated alarms for the same place are suppressed in the vision service."
     },
     "track_id": {
-      "description": "Id of the vehicle track in the vision service (stage S1). Needed for the next-camera match (FR-13, NFR-19).",
+      "description": "Id of the vehicle track in the vision service (stage S1), written as <run>-<tracker id>, where <run> is the UTC start time of the vision service (for example 20261126T090000Z-42), so that an id is not reused after a restart. The id is not stable: a vehicle can get a new id after an occlusion or glare, so one vehicle can arrive with several track_ids. Needed for the next-camera match (FR-13, NFR-19).",
       "type": "string",
       "minLength": 1,
       "maxLength": 64
@@ -37,8 +37,14 @@
       "minimum": 0,
       "exclusiveMaximum": 360
     },
+    "confidence": {
+      "description": "Confidence of the vision service in the event, from 0 to 1. For an emergency vehicle it is the mean classifier score over the track (S4PT-52). For stalled vehicles and accidents null if the rule gives no score.",
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
     "beacon_confidence": {
-      "description": "Confidence that the beacons are active, from 0 to 1 (FR-07, FR-08). null for stalled vehicles and accidents.",
+      "description": "Confidence that the beacons are active, from 0 to 1 (FR-07, FR-08). null while beacon detection (FR-07) is not implemented, and always null for stalled vehicles and accidents.",
       "type": ["number", "null"],
       "minimum": 0,
       "maximum": 1
@@ -48,13 +54,13 @@
       "description": "Lanes affected by a stalled vehicle or an accident (FR-11, FR-12). Empty for an emergency vehicle."
     },
     "snapshot_id": {
-      "$ref": "common.schema.json#/$defs/uuid",
-      "description": "Id of the blurred snapshot stored for the event (FR-08, FR-42)."
+      "description": "Id of the blurred snapshot stored for the event (FR-08, FR-42). null if no snapshot is stored, so that storing it does not delay the event.",
+      "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
     }
   },
   "required": [
     "schema_version", "event_id", "track_id", "type", "vehicle_type", "camera_id", "ts",
-    "speed", "direction", "beacon_confidence", "lanes", "snapshot_id"
+    "speed", "direction", "confidence", "beacon_confidence", "lanes", "snapshot_id"
   ],
   "additionalProperties": false,
   "allOf": [
@@ -63,7 +69,7 @@
       "then": {
         "properties": {
           "vehicle_type": { "$ref": "common.schema.json#/$defs/vehicle_type" },
-          "beacon_confidence": { "type": "number" }
+          "confidence": { "type": "number" }
         }
       },
       "else": {

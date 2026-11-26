@@ -73,12 +73,15 @@ INVALID = [
     ("i2-event", "i2-event.emergency_vehicle.json", {"vehicle_type": None}),
     ("i2-event", "i2-event.emergency_vehicle.json", {"ts": "2026-11-26T13:15:30+03:00"}),
     ("i2-event", "i2-event.emergency_vehicle.json", {"beacon_confidence": 1.5}),
+    ("i2-event", "i2-event.emergency_vehicle.json", {"confidence": None}),
+    ("i2-event", "i2-event.emergency_vehicle.json", {"confidence": 1.2}),
     ("i2-event", "i2-event.emergency_vehicle.json", {"direction": 360}),
     ("i2-event", "i2-event.emergency_vehicle.json", {"camera_id": "IZUM 001"}),
     ("i2-event", "i2-event.emergency_vehicle.json", {"event_id": "not-a-uuid"}),
     ("i2-event", "i2-event.emergency_vehicle.json", {"extra_field": 1}),
     ("i2-event", "i2-event.stalled_vehicle.json", {"lanes": []}),
     ("i2-event", "i2-event.stalled_vehicle.json", {"vehicle_type": "ambulance"}),
+    ("i2-event", "i2-event.stalled_vehicle.json", {"beacon_confidence": 0.5}),
     ("i3-camera-status", "i3-camera-status.offline.json", {"status": "alert"}),
     ("i7-driver-messages", "i7-driver-messages.alert.json", {"msg": "alarm"}),
     ("i7-driver-messages", "i7-driver-messages.alert.json", {"text": ""}),
@@ -99,6 +102,26 @@ def test_invalid_message_is_rejected(schema: str, file_name: str, change: dict) 
     message = example(file_name)
     message.update(change)
     assert errors(schema, message) != []
+
+
+# Messages that must be accepted: allowed variants of the examples.
+VALID = [
+    ("i2-event", "i2-event.emergency_vehicle.json", {"beacon_confidence": 0.93}),
+    ("i2-event", "i2-event.emergency_vehicle.json", {"snapshot_id": None}),
+    ("i2-event", "i2-event.stalled_vehicle.json", {"confidence": 0.75}),
+    ("i9-dashboard-messages", "i9-dashboard-messages.alert_card.json", {"snapshot_id": None}),
+]
+
+
+@pytest.mark.parametrize(
+    "schema, file_name, change",
+    VALID,
+    ids=[f"{file}:{next(iter(change))}" for _, file, change in VALID],
+)
+def test_valid_variant_is_accepted(schema: str, file_name: str, change: dict) -> None:
+    message = example(file_name)
+    message.update(change)
+    assert errors(schema, message) == []
 
 
 def test_missing_required_field_is_rejected() -> None:
