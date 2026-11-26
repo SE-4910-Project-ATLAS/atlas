@@ -24,7 +24,7 @@ on a physical phone use the IP address of the machine that runs Docker Compose.
 The iOS app is built on macOS with Xcode (SR-11).
 
 **Without a local Flutter installation**, the project can be checked and an Android debug
-APK built in Docker. The image is pinned to its newest tag (3.44.0) and only provides the
+APK built in Docker. The image is pinned to 3.44.0 and only provides the
 Android SDK and build tools; the first run downloads Flutter 3.50.0 into a Docker volume:
 
 ```bash
