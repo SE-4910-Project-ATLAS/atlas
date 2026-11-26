@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SE-4910-Project-ATLAS/atlas/contracts/schemas/common.schema.json",
+  "title": "ATLAS common definitions",
+  "description": "Building blocks shared by the message schemas in contracts/. Not a message on its own.",
+  "$defs": {
+    "schema_version": {
+      "description": "Version of the message schema. Increased when a field is added, removed or changed (see contracts/README.md).",
+      "type": "integer",
+      "minimum": 1
+    },
+    "uuid": {
+      "description": "UUID in lower-case canonical form, for example 3f2b8c1e-6a4d-4f0e-9b7a-1c2d3e4f5a6b.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "utc_timestamp": {
+      "description": "UTC time in ISO 8601 with the 'Z' suffix and up to microseconds, for example 2026-11-26T10:15:30.120Z. Local times and offsets are not allowed.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$"
+    },
+    "camera_id": {
+      "description": "Camera id from the camera configuration file of the vision service (S4PT-50), for example izum-001 or ibb-003.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "event_type": {
+      "description": "Kind of event: an emergency vehicle with active beacons (FR-08), a stalled vehicle (FR-11) or an accident (FR-12).",
+      "enum": ["emergency_vehicle", "stalled_vehicle", "accident"]
+    },
+    "vehicle_type": {
+      "description": "Type of emergency vehicle (FR-06, FR-08).",
+      "enum": ["ambulance", "police_car", "fire_truck"]
+    },
+    "lanes": {
+      "description": "Lane numbers as configured in the lane polygons of the camera (FR-11, FR-12, FR-20).",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "uniqueItems": true
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SE-4910-Project-ATLAS/atlas/contracts/schemas/i9-dashboard-messages.schema.json",
+  "title": "I9 Dashboard live messages",
+  "description": "Live messages from the backend to the operator dashboard on the WebSocket /ws/operator (System Architecture, I9). The field 'msg' tells which message it is. History, statistics and snapshots are loaded over REST and are not part of this schema.",
+  "oneOf": [
+    { "$ref": "#/$defs/alert_card" },
+    { "$ref": "#/$defs/camera_status" },
+    { "$ref": "#/$defs/zone_update" }
+  ],
+  "$defs": {
+    "alert_card": {
+      "title": "alert_card",
+      "description": "New event for the alert card and the camera marker on the map (FR-36, NFR-18).",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "alert_card" },
+        "event_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "type": { "$ref": "common.schema.json#/$defs/event_type" },
+        "vehicle_type": {
+          "description": "Type of emergency vehicle; null for stalled vehicles and accidents.",
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/vehicle_type" }, { "type": "null" }]
+        },
+        "camera_id": { "$ref": "common.schema.json#/$defs/camera_id" },
+        "ts": {
+          "$ref": "common.schema.json#/$defs/utc_timestamp",
+          "description": "ts of the I2 event."
+        },
+        "late": {
+          "description": "true if the event was older than 10 s when the backend read it; no driver alert was sent (D1).",
+          "type": "boolean"
+        },
+        "lanes": { "$ref": "common.schema.json#/$defs/lanes" },
+        "snapshot_id": {
+          "description": "Blurred snapshot, loaded over the authenticated REST endpoint (D6). null if no snapshot is stored.",
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }]
+        }
+      },
+      "required": ["schema_version", "msg", "event_id", "type", "vehicle_type", "camera_id", "ts", "late", "lanes", "snapshot_id"],
+      "additionalProperties": false,
+      "if": { "properties": { "type": { "const": "emergency_vehicle" } } },
+      "then": { "properties": { "vehicle_type": { "$ref": "common.schema.json#/$defs/vehicle_type" } } },
+      "else": { "properties": { "vehicle_type": { "type": "null" } } }
+    },
+    "camera_status": {
+      "title": "camera_status",
+      "description": "Camera status for the live map (FR-35), forwarded from I3.",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "camera_status" },
+        "camera_id": { "$ref": "common.schema.json#/$defs/camera_id" },
+        "status": { "enum": ["online", "offline"] },
+        "ts": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
+      },
+      "required": ["schema_version", "msg", "camera_id", "status", "ts"],
+      "additionalProperties": false
+    },
+    "zone_update": {
+      "title": "zone_update",
+      "description": "Current warning zone of an incident and the number of drivers warned so far (FR-15, FR-38). Sent when the zone moves or the count changes.",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "zone_update" },
+        "event_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "zone": { "$ref": "#/$defs/geojson_polygon" },
+        "drivers_warned": {
+          "description": "Number of drivers warned for this incident so far (FR-38). Only a count; no driver positions are sent (NFR-21).",
+          "type": "integer",
+          "minimum": 0
+        },
+        "ts": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
+      },
+      "required": ["schema_version", "msg", "event_id", "zone", "drivers_warned", "ts"],
+      "additionalProperties": false
+    },
+    "geojson_polygon": {
+      "description": "GeoJSON Polygon in WGS 84 (EPSG:4326), positions as [longitude, latitude]; the first and last position of a ring are the same (RFC 7946).",
+      "type": "object",
+      "properties": {
+        "type": { "const": "Polygon" },
+        "coordinates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 4,
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                { "type": "number", "minimum": -180, "maximum": 180 },
+                { "type": "number", "minimum": -90, "maximum": 90 }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      },
+      "required": ["type", "coordinates"],
+      "additionalProperties": false
+    }
+  }
+}

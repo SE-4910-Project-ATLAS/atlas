@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "msg": "alert_card",
+  "event_id": "3f2b8c1e-6a4d-4f0e-9b7a-1c2d3e4f5a6b",
+  "type": "emergency_vehicle",
+  "vehicle_type": "ambulance",
+  "camera_id": "izum-001",
+  "ts": "2026-11-26T10:15:30.120Z",
+  "late": false,
+  "lanes": [],
+  "snapshot_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+}

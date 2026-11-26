@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "msg": "route_offer",
+  "offer_id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+  "event_id": "c4d5e6f7-0a1b-4c2d-9e3f-4a5b6c7d8e9f",
+  "text": "Yeni rota yaklaşık 4 dakika kazandırır. Kabul etmek için Evet deyin.",
+  "time_saved_s": 240,
+  "ts": "2026-11-26T10:20:15.000Z"
+}

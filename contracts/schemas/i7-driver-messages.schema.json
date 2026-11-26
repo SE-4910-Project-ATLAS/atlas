@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SE-4910-Project-ATLAS/atlas/contracts/schemas/i7-driver-messages.schema.json",
+  "title": "I7 Driver app messages",
+  "description": "Messages on the Driving Mode WebSocket between the backend and the driver app (System Architecture, I7). The field 'msg' tells which message it is. The same alert, with the same event_id, is sent through FCM when no ack arrives within 500 ms (I8, D3).",
+  "oneOf": [
+    { "$ref": "#/$defs/alert" },
+    { "$ref": "#/$defs/ack" },
+    { "$ref": "#/$defs/all_clear" },
+    { "$ref": "#/$defs/route_offer" }
+  ],
+  "$defs": {
+    "alert": {
+      "title": "alert (backend to app)",
+      "description": "Alert about an emergency vehicle (FR-17, FR-30) or an incident (FR-20). The app plays it once per event_id and ignores repeats (D3).",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "alert" },
+        "event_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "type": { "$ref": "common.schema.json#/$defs/event_type" },
+        "text": {
+          "description": "Turkish alert text built by the backend from the configurable template of the event type (FR-46, FR-48). The app shows and speaks this text as it is. Templates that name a side or lane for the driver to move to are rejected in the backend (FR-46).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "params": {
+          "description": "Template parameters, also sent so that the app can show the banner without parsing the text.",
+          "type": "object",
+          "properties": {
+            "position": {
+              "description": "Where the event is relative to the driver: behind (emergency vehicle) or ahead (incident).",
+              "enum": ["behind", "ahead"]
+            },
+            "lanes": {
+              "$ref": "common.schema.json#/$defs/lanes",
+              "description": "Lanes affected by the incident, as seen by the camera (FR-20). Empty for an emergency vehicle."
+            }
+          },
+          "required": ["position", "lanes"],
+          "additionalProperties": false
+        },
+        "ts": {
+          "$ref": "common.schema.json#/$defs/utc_timestamp",
+          "description": "ts of the I2 event, so that the app can log the end-to-end time (NFR-09)."
+        }
+      },
+      "required": ["schema_version", "msg", "event_id", "type", "text", "params", "ts"],
+      "additionalProperties": false
+    },
+    "ack": {
+      "title": "ack (app to backend)",
+      "description": "Sent by the app as soon as it receives an alert. Without an ack within 500 ms the backend sends the alert through FCM (D3).",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "ack" },
+        "event_id": { "$ref": "common.schema.json#/$defs/uuid" }
+      },
+      "required": ["schema_version", "msg", "event_id"],
+      "additionalProperties": false
+    },
+    "all_clear": {
+      "title": "all_clear (backend to app)",
+      "description": "The emergency vehicle has passed the driver; never sent earlier (FR-19, NFR-24). The app closes the banner (FR-31).",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "all_clear" },
+        "event_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "ts": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
+      },
+      "required": ["schema_version", "msg", "event_id", "ts"],
+      "additionalProperties": false
+    },
+    "route_offer": {
+      "title": "route_offer (backend to app) - draft",
+      "description": "DRAFT, completed with the HLF-6 work. New-route offer after a confirmed incident on the driver's route (FR-24, FR-32). The driver answers by voice in the app; the outcome (accepted, rejected, timeout, cancelled) is sent on I11, which is not part of this schema. An alert that arrives during the answer window cancels the offer (technical meeting of 21.11.2026).",
+      "type": "object",
+      "properties": {
+        "schema_version": { "$ref": "common.schema.json#/$defs/schema_version", "const": 1 },
+        "msg": { "const": "route_offer" },
+        "offer_id": { "$ref": "common.schema.json#/$defs/uuid" },
+        "event_id": {
+          "$ref": "common.schema.json#/$defs/uuid",
+          "description": "Incident (stalled vehicle or accident) that the new route avoids."
+        },
+        "text": {
+          "description": "Turkish offer text spoken by the app, ending with the request to answer 'Evet' or 'Hayır'.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "time_saved_s": {
+          "description": "Estimated time saved by the new route in seconds (FR-24: at least 120 s or 10% of the remaining travel time).",
+          "type": "integer",
+          "minimum": 0
+        },
+        "ts": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
+      },
+      "required": ["schema_version", "msg", "offer_id", "event_id", "text", "time_saved_s", "ts"],
+      "additionalProperties": false
+    }
+  }
+}

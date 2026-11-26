@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "event_id": "7b6a5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d",
+  "track_id": "20261126T090000Z-118",
+  "type": "accident",
+  "vehicle_type": null,
+  "camera_id": "izum-001",
+  "ts": "2026-11-26T10:31:47.480Z",
+  "speed": null,
+  "direction": null,
+  "confidence": null,
+  "beacon_confidence": null,
+  "lanes": [2, 3],
+  "snapshot_id": "5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a"
+}
