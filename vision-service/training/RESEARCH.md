@@ -597,6 +597,18 @@ overstates rule changes that only help broken tracks; rule changes are judged on
 passages. (A first run of this comparison merged two seeds' runs of the same videos,
 which overwrite each other by video name, and used no shot cuts; it was discarded.)
 
+## Ensembles and mirror TTA (25.11.2026, night)
+
+`atlas_training.bench` now takes `a.pt+b.pt` (mean p of the members) and `a.pt@flip`
+(mean of the crop and its mirror image). Bench, v5g = 0.750 ambulance tracks, 0.052 FP
+crops: two-classifier ensemble 0.708 / 0.037, four-classifier ensemble 0.688 / 0.032,
+v5g + flip 0.792 / 0.041, two + flip 0.729 / 0.036. Averaging lowers false-positive
+crops (clear) but pulls confident scores towards the middle, so fewer ambulance tracks
+reach 0.7; lowering the threshold to compensate would tune on the bench. Mirror TTA was
+the only promising one (+0.042 tracks, interval [0, +0.10], not clear) and was run on the
+development set with `tracks.py --tta`: 13/16 passages, 12 false spans (v5g 14/16, 13).
+Not adopted; it would also double the classifier's cost.
+
 ## Turkish regulation that affects the labels
 
 - Lights: ambulances use blue-red or blue beacons (Gecis Ustunlugune Sahip Araclar

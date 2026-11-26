@@ -1,4 +1,4 @@
-# Ambulance detection results (S4PT-52) — DRAFT
+# Ambulance detection results (S4PT-52)
 
 Issue: S4PT-52 · Sprint: S4PT Sprint 4 · Author: Eren Türkan (22070006020)
 Related: FR-06, UC-2.1, NFR-04, NFR-05 (false alerts), NFR-02 (frame rate) · Code: branch `task/S4PT-52`,
@@ -124,6 +124,38 @@ threshold and the place memory.
   outside the labels stay unknown; intervals are wide with 49 videos.
 - FR-07 (beacon state) not covered; method notes in RESEARCH.md.
 
-## 9. Licences
-Datasets CC BY 4.0; YouTube clips local only; Ultralytics models AGPL-3.0 (same as the
-service).
+## 9. Experiments after the choice (none adopted)
+Measured on the development set, Sarıyer and a fixed hard-track benchmark
+(`atlas_training.bench`: 48 ambulance and 188 other tracks from development videos only,
+checked by eye, paired bootstrap). Details in RESEARCH.md.
+
+| Change | Result | Decision |
+| --- | --- | --- |
+| v5j: 25 more Turkish videos (510 ambulance, 64 negative crops), two seeds | recall crops 0.884 vs 0.886 for v5g's second seed; the first run's drop was run-to-run noise | not better, v5g stays |
+| Short confident tracks (>= 3 frames at mean >= 0.9 also alarm) | benchmark tracks 39 → 45 of 48, but development passages 14/16 unchanged and +1 false span | rejected |
+| Ensemble of 2 or 4 classifiers | fewer false-positive crops, fewer ambulance tracks over 0.7 | rejected |
+| Mirror test-time augmentation | benchmark promising (not significant); development 13/16 vs 14/16 | rejected |
+| Public van negatives (v5i), DINOv2 linear probe, synthetic night | lower recall | rejected |
+
+Lessons: one training run per data change is not enough (two runs of the same data
+differ by ±2 alarms), and a rule change is judged on passages, not on tracks.
+
+## 10. Processing speed
+RTX 4070 Laptop, 1080p night traffic video, about 10 vehicles per frame: 23 ms per frame
+(reading 1.9, vehicle detector and tracker 12.9, crop 1.4, classifier 6.8), about 44
+frames/s for one stream (NFR-02: >= 5 per stream). The decision needs >= 5 frames read
+at 12.5/s, so a clearly visible ambulance is confirmed about 0.4–1 s after it appears;
+far or partly hidden ambulances take longer (time to alarm on the test videos not yet
+measured). Sending the notification is outside this task.
+
+## 11. Reproduce
+Commands, configuration files (dataset versions, seeds) and every tool are in README.md.
+Training curves and confusion matrices are written by Ultralytics to
+`runs/cls/<name>/` (results.png, confusion_matrix*.png). Weights, datasets and video are
+kept outside Git (`D:/code/atlas-data` on the author's machine).
+
+## 12. Licences
+Public datasets CC BY 4.0 with attribution (README.md, "Data and licences"); YouTube
+clips local only, never published; Ultralytics YOLO11 and the trained weights AGPL-3.0;
+DINOv2 Apache-2.0 (leakage check only). The repository has no licence file yet; the team
+decides before trained weights are used in the service.

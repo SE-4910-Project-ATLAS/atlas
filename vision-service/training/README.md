@@ -42,6 +42,7 @@ Datasets, weights and run outputs are never committed (see `.gitignore`).
 | `atlas_training/night.py` | Synthetic night copies of crops (tried, not used: v5h) |
 | `atlas_training/calibrate.py` | Temperature scaling of the classifier (checked: v5e already calibrated) |
 | `RESEARCH.md` | Findings from the literature and our measurements, and the decision taken for each problem |
+| `RESULTS.md` | Results of S4PT-52: models compared on the same test set, NFR-04 at clip level, false alarms, the gap to the targets, speed and licences |
 
 ## Setup
 
@@ -221,6 +222,10 @@ van false alarms (classifier v5f, rejected).
 | --- | --- | --- | --- |
 | [Emergency_Vehicles_Detection](https://universe.roboflow.com/smarttrafficsignal/emergency_vehicles_detection) | training, test | CC BY 4.0 | smarttrafficsignal, Roboflow Universe |
 | [special_vehicles_small_ds](https://universe.roboflow.com/licenseplate-e4lyg/special_vehicles_small_ds) | training, test | CC BY 4.0 | licenseplate-e4lyg, Roboflow Universe |
+| [emergency_vehicles-night](https://universe.roboflow.com/aishwarya-s/emergency_vehicles-night) v27 | training, test | CC BY 4.0 | aishwarya-s, Roboflow Universe |
+| [van-2s73c](https://universe.roboflow.com/car-lmfdq/van-2s73c) v5 | one rejected experiment (v5i), not in the final model | CC BY 4.0 | car-lmfdq, Roboflow Universe |
+| Turkish traffic and news videos (YouTube) | training crops, tests | Standard YouTube licence: local only, never published or committed; models trained on them are not published | channels listed in each folder's SOURCES.csv |
+| [DINOv2 ViT-S/14](https://github.com/facebookresearch/dinov2) via timm | leakage check only (`leakcheck.py`) | Apache-2.0 | Meta AI |
 | [SmartTrafficAI](https://github.com/AmanAgrawalAI/SmartTrafficAI) weights | comparison | Repository MIT; weights trained with Ultralytics, metadata says AGPL-3.0 | AmanAgrawalAI |
 | [Ultralytics YOLO11](https://docs.ultralytics.com/) | base model and training library | AGPL-3.0 (or Ultralytics Enterprise licence) | Ultralytics |
 
