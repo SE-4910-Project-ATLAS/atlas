@@ -57,22 +57,51 @@ docker compose up --build
 ```
 
 The first start downloads the base images and takes a few minutes. When every service
-reports `healthy` in `docker compose ps`, the system is running:
+reports `healthy` in `docker compose ps`, the system is running.
+
+Caddy is the entry point: it serves the dashboard and forwards `/api` and `/ws` to the
+backend over HTTPS. In development every service is also published on its own port
+(`compose.override.yaml`, which `docker compose up` reads automatically):
 
 | Service | URL | Check |
 | --- | --- | --- |
+| Caddy (entry point) | https://localhost | https://localhost/api/health (backend through Caddy) |
 | Backend (FastAPI) | http://localhost:8000 | http://localhost:8000/health, API docs at `/docs` |
 | Vision service | http://localhost:8001 | http://localhost:8001/health |
 | Dashboard (React) | http://localhost:8080 | http://localhost:8080/health |
-| PostgreSQL/PostGIS | `localhost:5432` | user, password and database `atlas` |
-| Redis | `localhost:6379` | |
+| PostgreSQL/PostGIS | `localhost:5432` | user, password and database `atlas`; this machine only |
+| Redis | `localhost:6379` | this machine only |
 
-Stop the system with `docker compose down` (add `-v` to also delete the database volume).
-If a port is already in use, change it in `.env`.
+Stop the system with `docker compose down` (add `-v` to also delete the database and
+Caddy volumes).
+If a port is already in use, change it in `.env`; Caddy needs ports 80 and 443.
+
+**HTTPS in development.** For `localhost` Caddy issues a certificate from its own local
+CA, so the browser warns until that CA is trusted. To trust it, copy the root certificate
+out of the container and import it as a trusted root (Windows: double-click it → Install
+Certificate → Local Machine → Trusted Root Certification Authorities):
+
+```bash
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt caddy-root.crt
+```
+
+The CA is kept in the `caddy-data` volume, so this is needed only once. With `curl`, use
+`-k` instead.
+
+**Demo setup.** Only Caddy publishes ports (80 and 443); the backend, vision service,
+dashboard, database and Redis are reachable only inside the Docker network:
+
+```bash
+docker compose -f compose.yaml up --build
+```
+
+On the demo machine, set `SITE_ADDRESS` in `.env` to its domain; Caddy then gets a
+public certificate automatically (ports 80 and 443 must be reachable from the internet).
 
 **GPU.** By default the vision service runs on the CPU, which is enough for
 development. On a machine with an NVIDIA GPU and the NVIDIA Container Toolkit (SR-02),
-start it with GPU access:
+start it with GPU access. Naming files with `-f` leaves out `compose.override.yaml`, so
+this is the demo setup; add `-f compose.override.yaml` for the development ports:
 
 ```bash
 docker compose -f compose.yaml -f compose.gpu.yaml up --build
@@ -98,6 +127,7 @@ lock files and Docker image tags, and changed only through a reviewed Pull Reque
 | Node.js (LTS) | 24.22.3 | `dashboard/Dockerfile` |
 | React / Vite | 19.3.1 / 8.3.8 | `dashboard/package.json`, lock file `package-lock.json` |
 | nginx | 1.30.6 | `dashboard/Dockerfile` |
+| Caddy | 2.11.9 | `compose.yaml` (`caddy:2.11.9-alpine`) |
 | Flutter / Dart | 3.50.0 / 3.14.0 | `mobile-app/pubspec.yaml`, lock file `pubspec.lock` |
 
 ### Updating dependencies
