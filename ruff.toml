@@ -1,0 +1,12 @@
+# Lint and format rules for all Python code in the repository
+# (backend, vision-service, contracts tests). CI runs `ruff check` and `ruff format --check`.
+line-length = 100
+target-version = "py314"
+
+[lint]
+# pycodestyle, Pyflakes, isort, pyupgrade, flake8-bugbear
+select = ["E", "F", "I", "UP", "B"]
+
+[lint.isort]
+# The `app` package of backend/ and vision-service/ is our own code.
+known-first-party = ["app"]
