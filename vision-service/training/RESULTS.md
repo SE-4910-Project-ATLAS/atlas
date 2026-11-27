@@ -69,7 +69,7 @@ Every alarm outside the labelled intervals was then looked at, for both classifi
 test3 the sheets had missed real ambulances (a parked ambulance, one behind police
 officers, one entering a KGYS camera at the edge of a video labelled ambulance-free);
 those were added as positive and an unclear night van as ignored
-(`clips/test3/labels_audited.json`). test2 needed no change: all its alarms outside the
+(`eval_labels/test3/labels_audited.json`; the labels as first made are `eval_labels/test3/labels.json` and `eval_labels/test2/labels.json`). test2 needed no change: all its alarms outside the
 labels are false (a fire engine, an advertising truck, a monument, a red lorry). Only
 alarms can be audited this way, so the audit can only add passages a model found; both
 label sets are reported.
@@ -93,7 +93,7 @@ on the test sets. test3 alone (audited): v5g recall 25/26, precision 44/47; v5e 
 Chosen rule, applied once to 5 h of the İzmir square camera (2.5 h day, 2.5 h night),
 which was never used for training or for choosing the rule:
 
-Every alarm was looked at (`clips/fa/alarm_review.csv`, `atlas_training.report --reviewed`).
+Every alarm was looked at (`eval_labels/fa/alarm_review.csv`, `atlas_training.report --reviewed`).
 The recording was assumed to be ambulance-free, but an ambulance crosses the square in
 the daytime part (around minutes 119–127), so some alarms are correct detections:
 

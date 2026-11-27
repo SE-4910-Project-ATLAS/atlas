@@ -43,6 +43,7 @@ Datasets, weights and run outputs are never committed (see `.gitignore`).
 | `atlas_training/calibrate.py` | Temperature scaling of the classifier (checked: v5e already calibrated) |
 | `RESEARCH.md` | Findings from the literature and our measurements, and the decision taken for each problem |
 | `RESULTS.md` | Results of S4PT-52: models compared on the same test set, NFR-04 at clip level, false alarms, the gap to the targets, speed and licences |
+| `eval_labels/` | Held-out labels (test2, test3 as made and audited) and the eye check of the İzmir camera alarms behind the numbers in `RESULTS.md` |
 
 ## Setup
 
