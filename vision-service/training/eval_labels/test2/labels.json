@@ -1,0 +1,20 @@
+{
+  "_rule": "Clip-level test labels, checked by eye on frames every 2-8 s (21.11.2026). positive: seconds in which an ambulance (white, red strips) is visible; ignore: seconds where it is unclear, not scored; a video with no positive interval was checked to have no ambulance in the sampled frames. Excluded: videos filmed from inside or onto the ambulance (dashcam, selfie, the ambulance is the camera) and videos where it cannot be told whether an ambulance is visible. Sparse sampling: a short ambulance appearance between sampled frames in a long compilation can be missed; any alarm in an ambulance-free video is checked by eye before it is counted as false.",
+  "videos": {
+    "bUAINxbrXiI": {"type": "security camera + news", "positive": [[4, 9], [17, 37]], "ignore": [[38, 82]]},
+    "68Se2jtyoOo": {"type": "news, overturned ambulance", "positive": [[15, 50]], "ignore": []},
+    "IuSU_eZgZ1Y": {"type": "security camera", "positive": [[2, 26]], "ignore": []},
+    "1gl0gtGoL3E": {"type": "news, overturned and parked ambulances", "positive": [[0, 91]], "ignore": []},
+    "dQWTx4ukp-g": {"type": "news + drone, Istanbul junction", "positive": [[0, 88]], "ignore": [[89, 106]]},
+    "TGgJWxZOVpA": {"type": "phone, vertical, street", "positive": [[32, 38]], "ignore": []},
+    "k8axRr-SUdQ": {"type": "MOBESE compilation", "positive": [[29, 33]], "ignore": [[34, 37]]},
+    "HCc4VhdkD1I": {"type": "MOBESE compilation", "positive": [[49, 53]], "ignore": [[8, 24]]},
+    "yT8-iHzzsp8": {"type": "security camera + news, no ambulance", "positive": [], "ignore": []},
+    "eJm3e7L4WDI": {"type": "MOBESE compilation, no ambulance seen", "positive": [], "ignore": []},
+    "tIcZJTf2cgQ": {"type": "MOBESE compilation, no ambulance seen", "positive": [], "ignore": [[101, 151]]},
+    "cxabWbORDzg": {"type": "MOBESE, no ambulance", "positive": [], "ignore": []},
+    "NJD0bqByMq4": {"type": "night IR security camera, no ambulance", "positive": [], "ignore": []},
+    "vtdUV2ApERg": {"type": "MOBESE compilation, 12 min, no ambulance seen", "positive": [], "ignore": []},
+    "_excluded": ["YHtWCZutNGw", "3qnhswLcY-Q", "LP1jym7WG8w", "iXt6mpmu20Q", "Ns9EdhuwMk8"]
+  }
+}

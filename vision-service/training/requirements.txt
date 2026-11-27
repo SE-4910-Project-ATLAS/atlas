@@ -1,0 +1,178 @@
+--index-url https://download.pytorch.org/whl/cu132
+--extra-index-url https://pypi.org/simple
+
+annotated-doc==0.0.7
+    # via typer
+anyio==4.16.0
+    # via httpx
+certifi==2026.10.23
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
+    #   roboflow
+charset-normalizer==3.5.2
+    # via requests
+click==8.5.1
+    # via
+    #   roboflow
+    #   typer
+colorama==0.4.6
+    # via
+    #   pytest
+    #   tqdm
+contourpy==1.4.0
+    # via matplotlib
+cycler==0.12.1
+    # via
+    #   matplotlib
+    #   roboflow
+filelock==4.2.12
+    # via torch
+filetype==1.2.0
+    # via roboflow
+fonttools==4.68.0
+    # via matplotlib
+fsspec==2026.9.0
+    # via torch
+h11==0.16.0
+    # via httpcore
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via ultralytics-platform
+idna==3.20
+    # via
+    #   anyio
+    #   httpx
+    #   requests
+    #   roboflow
+iniconfig==2.3.1
+    # via pytest
+jinja2==3.1.6
+    # via torch
+kiwisolver==1.5.1
+    # via
+    #   matplotlib
+    #   roboflow
+lap==0.5.14
+    # via -r requirements.in
+markdown-it-py==4.3.0
+    # via rich
+markupsafe==3.0.4
+    # via jinja2
+matplotlib==3.11.2
+    # via
+    #   roboflow
+    #   ultralytics
+mdurl==0.1.2
+    # via markdown-it-py
+mpmath==1.3.0
+    # via sympy
+networkx==3.7
+    # via torch
+numpy==2.5.5
+    # via
+    #   -r requirements.in
+    #   contourpy
+    #   lap
+    #   matplotlib
+    #   opencv-python
+    #   opencv-python-headless
+    #   roboflow
+    #   torchvision
+    #   ultralytics
+    #   ultralytics-thop
+nvidia-ml-py==13.615.71
+    # via ultralytics
+opencv-python==5.1.0.95
+    # via ultralytics
+opencv-python-headless==5.1.0.95
+    # via roboflow
+packaging==26.3
+    # via
+    #   matplotlib
+    #   pytest
+pillow==13.0.0
+    # via
+    #   matplotlib
+    #   roboflow
+    #   torchvision
+    #   ultralytics
+pillow-avif-plugin==1.6.0
+    # via roboflow
+pluggy==1.7.0
+    # via pytest
+polars==2.1.0
+    # via ultralytics
+polars-runtime-32==2.1.0
+    # via polars
+psutil==7.2.2
+    # via ultralytics
+pygments==2.21.0
+    # via
+    #   pytest
+    #   rich
+pyparsing==3.3.3
+    # via matplotlib
+pytest==9.2.0
+    # via -r requirements.in
+python-dateutil==4.0.0
+    # via
+    #   matplotlib
+    #   roboflow
+python-dotenv==1.2.4
+    # via roboflow
+pyyaml==6.0.3
+    # via
+    #   -r requirements.in
+    #   roboflow
+requests==2.34.2
+    # via
+    #   requests-toolbelt
+    #   roboflow
+    #   ultralytics
+requests-toolbelt==1.0.0
+    # via roboflow
+rich==15.0.0
+    # via typer
+roboflow==1.7.3
+    # via -r requirements.in
+setuptools==84.2.1
+    # via torch
+shellingham==1.5.4
+    # via typer
+six==1.17.0
+    # via roboflow
+sympy==1.14.0
+    # via torch
+torch==2.15.0+cu132
+    # via
+    #   -r requirements.in
+    #   torchvision
+    #   ultralytics
+    #   ultralytics-thop
+torchvision==0.29.2+cu132
+    # via
+    #   -r requirements.in
+    #   ultralytics
+tqdm==4.70.1
+    # via roboflow
+typer==0.25.1
+    # via roboflow
+typing-extensions==4.16.0
+    # via
+    #   anyio
+    #   torch
+tzdata==2026.6
+    # via python-dateutil
+ultralytics==8.4.215
+    # via -r requirements.in
+ultralytics-platform==0.1.111
+    # via ultralytics
+ultralytics-thop==2.2.5
+    # via ultralytics
+urllib3==2.8.0
+    # via
+    #   requests
+    #   roboflow

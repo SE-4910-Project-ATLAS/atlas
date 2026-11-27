@@ -1,0 +1,11 @@
+# ByteTrack for the two-stage ambulance pipeline (atlas_training.tracks).
+# Ultralytics defaults except track_buffer: frames are read every 2nd frame, so 30 read
+# frames are about 2.4 s at 25 fps, long enough for an ambulance passing behind a bus
+# (ByteTrack keeps lost tracks 30 frames; Zhang et al., ECCV 2022).
+tracker_type: bytetrack
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.25
+track_buffer: 30
+match_thresh: 0.8
+fuse_score: True
