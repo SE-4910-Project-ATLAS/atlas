@@ -13,6 +13,12 @@
 datasets/
 recordings/
 
+# Python caches created by running the tests and lint
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
 # OS and editor files
 .DS_Store
 Thumbs.db
