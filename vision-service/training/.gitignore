@@ -1,0 +1,10 @@
+# Large or local files of the training tools – never committed
+.venv/
+datasets/
+weights/
+runs/
+*.part
+
+# Python bytecode
+__pycache__/
+*.pyc

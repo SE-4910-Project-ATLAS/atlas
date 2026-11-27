@@ -1,0 +1,10 @@
+run,start_s,verdict,note
+izmir_day,7169.0,ambulance,"v5g; white ambulance with red stripes and roof beacon crossing the square (checked by eye 23.11.2026)"
+izmir_day,7586.5,ambulance,"v5g; white high-roof ambulance across the square, the same one seen close 25 s later"
+izmir_day,7610.7,ambulance,"v5g and v5e (7611.6); 112 ambulance close to the camera"
+izmir_day,7611.6,ambulance,"v5e; same 112 ambulance"
+izmir_night,5897.3,false,"v5g; small blue light about 20 px wide, stationary, no vehicle visible"
+izmir_night,5898.9,false,"v5g; same blue light, same track (one event, two spans)"
+izmir_day,4449.9,false,"v5e; plain white panel van"
+izmir_day,4450.8,false,"v5e; same van, same track"
+izmir_day,7378.8,false,"v5e; red and white city bus"

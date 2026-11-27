@@ -1,0 +1,3 @@
+# Training tools, data, weights, runs and the local virtual environment (several GB)
+# are not part of the vision service image; keep them out of the build context.
+training/

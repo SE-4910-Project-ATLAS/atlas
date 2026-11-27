@@ -1,0 +1,649 @@
+{
+ "_rule": "Clip-level test labels for test3, checked by eye on frames every 2 s (23.11.2026). positive: seconds in which a physical ambulance (white with red strips, or the older 112 livery) is visible; ignore: seconds where it is unclear (studio screens, picture-in-picture, scene with an ambulance hidden or too far to tell), not scored; a video with no positive interval was checked to have no ambulance in the sampled frames. Excluded: duplicates of another test3 video, videos where the ambulance cannot be told apart, and a caption-only video with the crash off-frame. Never used for training or for choosing any setting. Sampling every 2 s can miss a short appearance; any alarm in an ambulance-free video is checked by eye before it counts as false.",
+ "videos": {
+  "9t2mRpyxPrY": {
+   "type": "security camera, square, Tosya",
+   "positive": [
+    [
+     34,
+     83
+    ]
+   ],
+   "ignore": [
+    [
+     6,
+     33
+    ]
+   ]
+  },
+  "C_fAJ-t_Ws8": {
+   "type": "night: CCTV on a screen, then overturned ambulance; crashed minibus on a tow truck is not an ambulance",
+   "positive": [
+    [
+     14,
+     21
+    ],
+    [
+     27,
+     45
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     13
+    ]
+   ]
+  },
+  "EKzoNbrpReY": {
+   "type": "night: security camera (beacon only, far), then news at the scene",
+   "positive": [
+    [
+     22,
+     29
+    ],
+    [
+     42,
+     45
+    ]
+   ],
+   "ignore": [
+    [
+     1,
+     21
+    ]
+   ]
+  },
+  "HwkoZi2Qykw": {
+   "type": "news: overturned and parked ambulances; security camera at start shows no ambulance",
+   "positive": [
+    [
+     20,
+     43
+    ],
+    [
+     54,
+     59
+    ],
+    [
+     66,
+     77
+    ],
+    [
+     128,
+     149
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     19
+    ],
+    [
+     78,
+     127
+    ]
+   ]
+  },
+  "RlEizk4WI5o": {
+   "type": "security camera on a screen, ambulance small and far",
+   "positive": [
+    [
+     4,
+     9
+    ],
+    [
+     26,
+     31
+    ],
+    [
+     47,
+     51
+    ]
+   ],
+   "ignore": [
+    [
+     10,
+     21
+    ],
+    [
+     32,
+     43
+    ]
+   ]
+  },
+  "mTIqdVFXpFk": {
+   "type": "security camera (ambulance small, top of frame, blurred) then phone video at the scene",
+   "positive": [
+    [
+     12,
+     37
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     11
+    ]
+   ]
+  },
+  "bcwIRpTqzVQ": {
+   "type": "night: security camera, ambulance far at top with beacons, parked white van in front is not an ambulance; then phone video at the scene",
+   "positive": [
+    [
+     8,
+     51
+    ],
+    [
+     56,
+     119
+    ]
+   ],
+   "ignore": [
+    [
+     52,
+     55
+    ],
+    [
+     120,
+     136
+    ]
+   ]
+  },
+  "xEdIEtxeuU4": {
+   "type": "security camera then news, overturned ambulance, Kütahya",
+   "positive": [
+    [
+     0,
+     45
+    ],
+    [
+     54,
+     57
+    ]
+   ],
+   "ignore": [
+    [
+     46,
+     53
+    ]
+   ]
+  },
+  "6kNqpx6T61o": {
+   "type": "security camera then news, Bursa",
+   "positive": [
+    [
+     4,
+     9
+    ],
+    [
+     18,
+     97
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     3
+    ],
+    [
+     10,
+     17
+    ]
+   ]
+  },
+  "Y8rczMRuCPQ": {
+   "type": "MOBESE split screen, Samsun junction; white vans pass (not ambulances)",
+   "positive": [
+    [
+     10,
+     11
+    ],
+    [
+     30,
+     31
+    ],
+    [
+     38,
+     41
+    ]
+   ],
+   "ignore": [
+    [
+     12,
+     13
+    ],
+    [
+     42,
+     43
+    ]
+   ]
+  },
+  "ph0diRk7HB4": {
+   "type": "night: security camera (ambulance not identifiable), then phone video at the scene; tow truck at the end",
+   "positive": [
+    [
+     16,
+     43
+    ],
+    [
+     52,
+     53
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     15
+    ],
+    [
+     44,
+     51
+    ]
+   ]
+  },
+  "qreCPCILYU0": {
+   "type": "security camera then phone video, Bursa; long street stretch with trucks and white vans without ambulance",
+   "positive": [
+    [
+     6,
+     19
+    ],
+    [
+     30,
+     39
+    ],
+    [
+     64,
+     71
+    ],
+    [
+     78,
+     91
+    ]
+   ],
+   "ignore": [
+    [
+     20,
+     29
+    ],
+    [
+     40,
+     41
+    ]
+   ]
+  },
+  "Iqtv_l4dKMo": {
+   "type": "phone and dashcam in rain, Sakarya; white service minibus (not an ambulance) at 22-29",
+   "positive": [
+    [
+     12,
+     25
+    ],
+    [
+     47,
+     49
+    ]
+   ],
+   "ignore": [
+    [
+     8,
+     11
+    ],
+    [
+     50,
+     55
+    ]
+   ]
+  },
+  "wZVNMFMbLps": {
+   "type": "news + several security cameras, old livery; CCTV parts show small far vehicles",
+   "positive": [
+    [
+     0,
+     5
+    ],
+    [
+     26,
+     29
+    ],
+    [
+     34,
+     41
+    ],
+    [
+     46,
+     53
+    ]
+   ],
+   "ignore": [
+    [
+     6,
+     25
+    ],
+    [
+     30,
+     33
+    ],
+    [
+     42,
+     45
+    ]
+   ]
+  },
+  "4pIIk2fM4kc": {
+   "type": "news, Denizli, ambulance hit by a white minibus (dolmus is not an ambulance); police cars",
+   "positive": [
+    [
+     0,
+     41
+    ],
+    [
+     60,
+     65
+    ],
+    [
+     74,
+     79
+    ]
+   ],
+   "ignore": [
+    [
+     42,
+     59
+    ],
+    [
+     66,
+     73
+    ],
+    [
+     80,
+     95
+    ]
+   ]
+  },
+  "uOGISF-hQ40": {
+   "type": "news, Manisa, overturned ambulances and a crushed car",
+   "positive": [
+    [
+     0,
+     9
+    ],
+    [
+     16,
+     25
+    ],
+    [
+     36,
+     41
+    ]
+   ],
+   "ignore": [
+    [
+     10,
+     15
+    ],
+    [
+     26,
+     35
+    ]
+   ]
+  },
+  "ePtpo2HSZdk": {
+   "type": "night: camera in a following car, ambulance ahead in Istanbul traffic with beacons",
+   "positive": [
+    [
+     6,
+     51
+    ]
+   ],
+   "ignore": [
+    [
+     4,
+     5
+    ],
+    [
+     52,
+     57
+    ]
+   ]
+  },
+  "SgPpRgcUVA8": {
+   "type": "night, rain: overturned ambulance, Kocaeli; white panel van at the end is not an ambulance",
+   "positive": [
+    [
+     0,
+     29
+    ]
+   ],
+   "ignore": [
+    [
+     30,
+     31
+    ]
+   ]
+  },
+  "VFEsEQWXAWQ": {
+   "type": "security camera, Bursa square; ambulance at the top right for a moment; white police vans parked (not ambulances)",
+   "positive": [
+    [
+     2,
+     3
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     1
+    ],
+    [
+     4,
+     5
+    ]
+   ]
+  },
+  "-e1ICZn3B2E": {
+   "type": "night IR security camera, parked cars and headlights, no ambulance",
+   "positive": [],
+   "ignore": []
+  },
+  "WaHCEaMXdNk": {
+   "type": "MOBESE Bolu, no ambulance; white dialysis-centre minibus and white vans (hard negatives)",
+   "positive": [],
+   "ignore": []
+  },
+  "ZwRF38P5K8c": {
+   "type": "KGYS Sakarya compilation (day, night, rain), no ambulance seen; white vans and minibuses",
+   "positive": [],
+   "ignore": []
+  },
+  "Rp-KvPTRI0U": {
+   "type": "KGYS Sakarya compilation, no ambulance",
+   "positive": [],
+   "ignore": []
+  },
+  "DXoAGtKkP58": {
+   "type": "KGYS Bursa, white minibus and panel van close to the camera (hard negatives), night part; no ambulance",
+   "positive": [],
+   "ignore": []
+  },
+  "TzRIBFGdw5g": {
+   "type": "news with studio graphics (studio not scored), Denizli; security camera then phone video",
+   "positive": [
+    [
+     12,
+     13
+    ],
+    [
+     16,
+     23
+    ],
+    [
+     40,
+     45
+    ],
+    [
+     48,
+     57
+    ],
+    [
+     62,
+     69
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     11
+    ],
+    [
+     14,
+     15
+    ],
+    [
+     24,
+     39
+    ],
+    [
+     46,
+     47
+    ],
+    [
+     58,
+     61
+    ],
+    [
+     70,
+     79
+    ]
+   ]
+  },
+  "lpDLg2DFPQY": {
+   "type": "news, motorbike crash; ambulance 0-23, then police, white cars, white VW van (not ambulances)",
+   "positive": [
+    [
+     0,
+     23
+    ]
+   ],
+   "ignore": [
+    [
+     24,
+     25
+    ]
+   ]
+  },
+  "xUgTyUAh3jg": {
+   "type": "news, motorbike crash, Isparta; ambulance arrives at the scene; security camera parts have no ambulance",
+   "positive": [
+    [
+     42,
+     45
+    ],
+    [
+     54,
+     63
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     15
+    ],
+    [
+     36,
+     41
+    ]
+   ]
+  },
+  "zl_FwZ1SzNM": {
+   "type": "dashcam at a junction with trucks, no ambulance",
+   "positive": [],
+   "ignore": []
+  },
+  "4Q0q_kZHmOE": {
+   "type": "crashed white service minibus (school/service, yellow stripe), white vans, buses; no ambulance (hard negative)",
+   "positive": [],
+   "ignore": []
+  },
+  "DQ_yabdnOHA": {
+   "type": "phone video, Kahramanmaras; ambulance arrives at the edge; white Fiat Fiorino is not an ambulance",
+   "positive": [
+    [
+     22,
+     39
+    ]
+   ],
+   "ignore": [
+    [
+     40,
+     49
+    ]
+   ]
+  },
+  "S6AxT_6hQ0w": {
+   "type": "night: rain security camera (no ambulance identifiable), then ambulance rear at the scene next to a gendarmerie car",
+   "positive": [
+    [
+     42,
+     57
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     41
+    ]
+   ]
+  },
+  "blloLTNHCew": {
+   "type": "phone video of crashed cars, police cars, no ambulance",
+   "positive": [],
+   "ignore": []
+  },
+  "Ym5aNe_j6Sg": {
+   "type": "news, Bodrum, ambulance at the scene; white Ford Transit van in front is not an ambulance",
+   "positive": [
+    [
+     6,
+     17
+    ],
+    [
+     24,
+     41
+    ]
+   ],
+   "ignore": [
+    [
+     0,
+     5
+    ],
+    [
+     18,
+     23
+    ],
+    [
+     42,
+     45
+    ]
+   ]
+  },
+  "s__VKq9eRUM": {
+   "type": "news, crashed cars and white panel vans close up (hard negatives); studio parts",
+   "positive": [],
+   "ignore": []
+  },
+  "Pr7stn_TpgA": {
+   "type": "MOBESE Çorum, white van and yellow vacuum truck (hard negatives), no ambulance",
+   "positive": [],
+   "ignore": []
+  },
+  "_excluded": [
+   "ITgibd4uoFA",
+   "X9obkkVdOok",
+   "CqI_wy2Eim0",
+   "K6keqUKB38I",
+   "Q__m73HYmKU"
+  ]
+ }
+}
