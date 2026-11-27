@@ -83,6 +83,48 @@ emulator. See `mobile-app/README.md`.
 
 Each sub-system's own `README.md` explains how to run it outside Docker for development.
 
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) checks every Pull Request to `main` and every
+push to `main`. Only the sub-systems whose files changed are checked; a change to the
+workflow or to `ruff.toml` checks everything.
+
+| Job | Runs when these change | Checks |
+| --- | --- | --- |
+| Backend | `backend/` | `ruff check`, `ruff format --check`, `pytest` (Python 3.15.2 image) |
+| Vision service | `vision-service/` | `ruff check`, `ruff format --check`, `pytest tests` (Python 3.15.2 image); the training tools in `vision-service/training/` are not checked, they have their own environment (see its README) |
+| Contracts | `contracts/` | `ruff`, schema and example tests (`pytest contracts`) |
+| Dashboard | `dashboard/` | `npm run lint` (ESLint), `npm run build` |
+| Mobile app | `mobile-app/` | `flutter analyze`, `flutter test` (Flutter 3.50.0) |
+| Docker Compose | Compose files, `.env.example`, Dockerfiles, lock files | `docker compose config` (also with `compose.gpu.yaml`), then `docker compose up --wait` and the three `/health` endpoints |
+| CI result | always | Fails if any job above failed or was cancelled; skipped jobs count as passed |
+
+**Branch protection.** Only **CI result** has to be set as a required status check for
+`main` (Settings > Branches > `main` > Require status checks to pass). Because it always
+runs and collects the other jobs, a Pull Request that touches only one sub-system is not
+blocked by the skipped jobs of the others. Together with the existing rule of one
+approving review, a Pull Request with a failing lint or test cannot be merged.
+
+**Run the same checks locally** before pushing:
+
+```bash
+# Backend or vision service (in the sub-system folder, Python 3.15)
+pip install -r requirements-dev.txt
+ruff check . && ruff format --check . && python -m pytest tests -q
+
+# Contracts (in the repository root)
+pip install -r contracts/requirements.txt ruff==0.17.6
+ruff check contracts && python -m pytest contracts -q
+
+# Dashboard
+cd dashboard && npm ci && npm run lint && npm run build
+
+# Mobile app
+cd mobile-app && flutter analyze && flutter test
+```
+
+`ruff format .` and `ruff check --fix .` fix most Python lint errors automatically.
+
 ## Versions
 
 Versions follow the software version policy (Statement of Work > Standards & Special
@@ -99,6 +141,9 @@ lock files and Docker image tags, and changed only through a reviewed Pull Reque
 | React / Vite | 19.3.1 / 8.3.8 | `dashboard/package.json`, lock file `package-lock.json` |
 | nginx | 1.30.6 | `dashboard/Dockerfile` |
 | Flutter / Dart | 3.50.0 / 3.14.0 | `mobile-app/pubspec.yaml`, lock file `pubspec.lock` |
+| ruff / pytest / httpx2 | 0.17.6 / 9.2.0 / 2.16.2 | `requirements-dev.in`, lock file `requirements-dev.txt` |
+| ESLint | 10.15.0 | `dashboard/package.json`, lock file `package-lock.json` |
+| GitHub Actions | checkout 7.0.1, setup-node 7.1.0, paths-filter 4.0.3, flutter-action 2.23.0; runner `ubuntu-24.04` | `.github/workflows/ci.yml` |
 
 ### Updating dependencies
 
@@ -110,7 +155,9 @@ lock files and Docker image tags, and changed only through a reviewed Pull Reque
     sh -c "pip install -q -r requirements.in && pip freeze > requirements.txt"
   ```
 
-  (use `vision-service` instead of `backend` for the vision service).
+  (use `vision-service` instead of `backend` for the vision service). The test and lint
+  tools are in `requirements-dev.in`; regenerate `requirements-dev.txt` the same way with
+  `pip install -q -r requirements.txt -r requirements-dev.in && pip freeze > requirements-dev.txt`.
 - **Dashboard:** `npm install <package>@<version>` in `dashboard/` and commit
   `package.json` together with `package-lock.json`.
 - **Base images:** change the tag in the Dockerfile or `compose.yaml` and update the table

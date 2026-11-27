@@ -1,0 +1,5 @@
+# Tools for tests and lint, on top of requirements.txt. requirements-dev.txt is the
+# lock file generated from requirements.txt plus this list (see the root README).
+pytest==9.2.0
+httpx2==2.16.2
+ruff==0.17.6
