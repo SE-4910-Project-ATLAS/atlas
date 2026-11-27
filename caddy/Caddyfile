@@ -1,0 +1,21 @@
+# Reverse proxy: the only service reachable from outside (System Architecture, Option A, D5).
+# SITE_ADDRESS defaults to localhost, for which Caddy issues a certificate from its own
+# local CA (development HTTPS). Set it to the real domain on the demo machine and Caddy
+# gets a public certificate automatically.
+
+{$SITE_ADDRESS:localhost} {
+	# REST API: /api/health reaches the backend as /health.
+	handle_path /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# WebSockets (e.g. /ws/operator) keep their path.
+	handle /ws* {
+		reverse_proxy backend:8000
+	}
+
+	# Everything else is the dashboard.
+	handle {
+		reverse_proxy dashboard:80
+	}
+}
