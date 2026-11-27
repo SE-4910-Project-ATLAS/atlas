@@ -96,9 +96,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - run: pip install --no-cache-dir --root-user-action=ignore -r requirements-dev.txt
+      # training/ is excluded in ruff.toml and has its own tests and environment
+      # (PyTorch, Ultralytics; see vision-service/training/README.md).
       - run: ruff check .
       - run: ruff format --check .
-      - run: python -m pytest -q
+      - run: python -m pytest tests -q
 
   contracts:
     name: Contracts (schema tests)

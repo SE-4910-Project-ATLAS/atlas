@@ -92,7 +92,7 @@ workflow or to `ruff.toml` checks everything.
 | Job | Runs when these change | Checks |
 | --- | --- | --- |
 | Backend | `backend/` | `ruff check`, `ruff format --check`, `pytest` (Python 3.15.2 image) |
-| Vision service | `vision-service/` | `ruff check`, `ruff format --check`, `pytest` (Python 3.15.2 image) |
+| Vision service | `vision-service/` | `ruff check`, `ruff format --check`, `pytest tests` (Python 3.15.2 image); the training tools in `vision-service/training/` are not checked, they have their own environment (see its README) |
 | Contracts | `contracts/` | `ruff`, schema and example tests (`pytest contracts`) |
 | Dashboard | `dashboard/` | `npm run lint` (ESLint), `npm run build` |
 | Mobile app | `mobile-app/` | `flutter analyze`, `flutter test` (Flutter 3.50.0) |
@@ -110,7 +110,7 @@ approving review, a Pull Request with a failing lint or test cannot be merged.
 ```bash
 # Backend or vision service (in the sub-system folder, Python 3.15)
 pip install -r requirements-dev.txt
-ruff check . && ruff format --check . && python -m pytest -q
+ruff check . && ruff format --check . && python -m pytest tests -q
 
 # Contracts (in the repository root)
 pip install -r contracts/requirements.txt ruff==0.17.6

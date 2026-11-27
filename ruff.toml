@@ -2,6 +2,10 @@
 # (backend, vision-service, contracts tests). CI runs `ruff check` and `ruff format --check`.
 line-length = 100
 target-version = "py314"
+# The training and research tools of S4PT-52 have their own environment (PyTorch,
+# Ultralytics; see vision-service/training/README.md) and are not part of the running
+# service, so they are not checked with the service code.
+extend-exclude = ["vision-service/training"]
 
 [lint]
 # pycodestyle, Pyflakes, isort, pyupgrade, flake8-bugbear
